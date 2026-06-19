@@ -41,6 +41,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Numer legitymacji nauczyciela musi mieć od 5 do 20 znaków (litery, cyfry, myślniki).';
         }
         $class_level = null;
+    } elseif ($type === 'student_creator') {
+        $class_level = null;
     } elseif ($type === 'student' && empty($class_level)) {
         $error = 'Uczeń musi wybrać poziom edukacji.';
     }
@@ -54,8 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
                 $is_verified = ($type === 'teacher') ? 0 : 1;
+                $save_type = ($type === 'student_creator') ? 'teacher' : $type;
                 $stmt = $pdo->prepare("INSERT INTO users (username, email, password, type, class_level, is_verified, school_name, rspo_number, teacher_card_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                if ($stmt->execute([$username, $email, $hashedPassword, $type, $class_level, $is_verified, $school_name, $rspo_number, $teacher_card_number])) {
+                if ($stmt->execute([$username, $email, $hashedPassword, $save_type, $class_level, $is_verified, $school_name, $rspo_number, $teacher_card_number])) {
                     $success = 'Konto utworzone. ' . ($type === 'teacher' ? 'Twoje konto oczekuje na weryfikację. ' : '') . 'Możesz teraz <a href="login.php">się zalogować</a>.';
                 } else {
                     $error = 'Coś poszło nie tak. Spróbuj ponownie.';
@@ -150,17 +153,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="role-option">
                                 <input type="radio" name="type" id="role-student" value="student" <?= (!isset($_POST['type']) || $_POST['type'] === 'student') ? 'checked' : '' ?>>
                                 <label for="role-student" class="role-label">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 6px; display: block;"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"></path></svg>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 6px; display: block; margin: 0 auto 6px;"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"></path></svg>
                                     <span>Uczeń</span>
                                     <small>Materiały i lekcje</small>
                                 </label>
                             </div>
                             <div class="role-option">
+                                <input type="radio" name="type" id="role-student-creator" value="student_creator" <?= (isset($_POST['type']) && $_POST['type'] === 'student_creator') ? 'checked' : '' ?>>
+                                <label for="role-student-creator" class="role-label">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 6px; display: block; margin: 0 auto 6px;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                    <span>Uczeń-twórca</span>
+                                    <small>Notatki i publikacja</small>
+                                </label>
+                            </div>
+                            <div class="role-option">
                                 <input type="radio" name="type" id="role-teacher" value="teacher" <?= (isset($_POST['type']) && $_POST['type'] === 'teacher') ? 'checked' : '' ?>>
                                 <label for="role-teacher" class="role-label">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 6px; display: block;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 6px; display: block; margin: 0 auto 6px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
                                     <span>Nauczyciel</span>
-                                    <small>Panel i publikacje</small>
+                                    <small>Weryfikowany panel</small>
                                 </label>
                             </div>
                         </div>
@@ -269,6 +280,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 schoolName.setAttribute('required', 'required');
                 rspoNumber.setAttribute('required', 'required');
                 teacherCard.setAttribute('required', 'required');
+            } else if (role === 'student_creator') {
+                classGroup.style.display = 'none';
+                classGroup.style.opacity = '0';
+                classGroup.style.animation = 'none';
+                classSelect.removeAttribute('required');
+                emailInput.placeholder = 'name@example.com';
+
+                teacherGroup.style.display = 'none';
+                teacherGroup.style.opacity = '0';
+                teacherGroup.style.animation = 'none';
+                schoolName.removeAttribute('required');
+                rspoNumber.removeAttribute('required');
+                teacherCard.removeAttribute('required');
             } else {
                 classGroup.style.display = 'block';
                 classGroup.style.animation = 'fadeInUp 0.3s ease-out';
