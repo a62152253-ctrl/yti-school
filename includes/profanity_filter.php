@@ -2883,6 +2883,24 @@ final class ProfanityFilter
         ];
         $normalized = strtr($normalized, $diacritics);
 
+        // Pre-check: Regular expression checks for common obfuscated patterns (e.g. k**wa, j***ć, p***a)
+        $regexCleaned = preg_replace('/[^\w\s\*]/u', '', $normalized) ?? $normalized;
+        $patterns = [
+            '/k[\*u0v]{1,2}[\*r]?[\*w][\*a]?/ui',       // kurw, k*rw, k**wa, k**w
+            '/p[\*i1!\|]?[\*e3]?[\*r]?[\*d]/ui',        // pierd, p*erd, p***d
+            '/j[\*e3]{1,2}[\*b]/ui',                    // jeb, j*b, j3b
+            '/p[\*i1!\|][\*z]?[\*d]/ui',                // pizd, p*zd, pi*d, p***d
+            '/c[\*w]?[\*e3]?[\*l]/ui',                  // cwel, c*el, c**l
+            '/k[\*u0v][\*t]?[\*a4\@]?[\*s]/ui',         // kutas, k*tas, ku**s
+            '/(ch|h)[\*u0v][\*j]/ui',                   // chuj, huj, ch*j, c*uj
+            '/(?<!z)s[\*u0v][\*k]?[\*a4\@](?!ces)/ui',  // suka, s*ka
+        ];
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $regexCleaned)) {
+                return true;
+            }
+        }
+
         // 2. We extract words from the comment to do whole-word checks.
         // This solves the Scunthorpe problem (e.g. "szuka" contains "suka").
         // We replace any separation characters/punctuation/numbers with space, but keep letters and '*'
