@@ -12,9 +12,10 @@ if (strlen($q) < 2) {
 try {
     $query = '%' . $q . '%';
     $stmt = $pdo->prepare("
-        SELECT id, title, subject 
-        FROM notes 
-        WHERE (title LIKE ? OR tags LIKE ? OR description LIKE ?) 
+        SELECT n.id, n.title, n.subject, u.username AS author_name
+        FROM notes n
+        JOIN users u ON n.user_id = u.id
+        WHERE (n.title LIKE ? OR n.tags LIKE ? OR n.description LIKE ?) 
         LIMIT 8
     ");
     $stmt->execute([$query, $query, $query]);

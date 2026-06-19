@@ -89,9 +89,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_playlist'])) {
     SecurityEnterprise::requireCsrf($_POST['csrf_token'] ?? '');
     $playlistToDelete = (int)$_POST['playlist_id'];
     try {
-        // Delete playlist notes association
-        $stmt = $pdo->prepare("DELETE FROM playlist_notes WHERE playlist_id = ?");
-        $stmt->execute([$playlistToDelete]);
+        // Delete playlist notes association (ensuring playlist belongs to the user)
+        $stmt = $pdo->prepare("DELETE FROM playlist_notes WHERE playlist_id = ? AND playlist_id IN (SELECT id FROM playlists WHERE user_id = ?)");
+        $stmt->execute([$playlistToDelete, $user_id]);
         
         // Delete playlist itself
         $stmt = $pdo->prepare("DELETE FROM playlists WHERE id = ? AND user_id = ?");
@@ -160,9 +160,9 @@ try {
     $playlistNotesMap = [];
 }
 
-// Collect search filters
-$selectedSubjectFilter = $_GET['filter_subject'] ?? '';
-$selectedTypeFilter = $_GET['filter_type'] ?? '';
+// Collect search filters and sanitize them
+$selectedSubjectFilter = SecurityEnterprise::getSanitizedString('filter_subject');
+$selectedTypeFilter = SecurityEnterprise::getSanitizedString('filter_type');
 
 // 3. Fetch Teacher's Uploaded Notes with Comments, Likes and Reports
 $queryCountStr = "SELECT COUNT(*) as total_uploaded FROM notes WHERE user_id = ?";

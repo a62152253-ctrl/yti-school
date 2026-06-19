@@ -40,11 +40,12 @@ try {
     $myViewsCount = 0;
 }
 
-// Action to dismiss a report
-if ($is_teacher && isset($_GET['action']) && $_GET['action'] === 'dismiss') {
-    $report_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-    if ($report_id > 0) {
-        try {
+// Action to dismiss a report (secured with POST and CSRF)
+if ($is_teacher && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'dismiss') {
+    try {
+        SecurityEnterprise::requireCsrf($_POST['csrf_token'] ?? '');
+        $report_id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+        if ($report_id > 0) {
             // Verify ownership first
             $stmt = $pdo->prepare("SELECT r.id FROM reports r JOIN notes n ON r.note_id = n.id WHERE r.id = ? AND n.user_id = ?");
             $stmt->execute([$report_id, $user_id]);
@@ -52,9 +53,9 @@ if ($is_teacher && isset($_GET['action']) && $_GET['action'] === 'dismiss') {
                 $stmt = $pdo->prepare("DELETE FROM reports WHERE id = ?");
                 $stmt->execute([$report_id]);
             }
-        } catch (\PDOException $e) {
-            // Silence or handle
         }
+    } catch (\Exception $e) {
+        // CSRF check failed or DB error
     }
     redirect('report.php');
 }
@@ -163,7 +164,12 @@ if ($is_teacher && isset($_GET['action']) && $_GET['action'] === 'dismiss') {
                                     <td><?= date('Y-m-d H:i', strtotime($r['created_at'])) ?></td>
                                     <?php if ($is_teacher): ?>
                                         <td>
-                                            <a href="report.php?action=dismiss&id=<?= $r['id'] ?>" class="report-action-btn btn-secondary dismiss-report-btn">Odrzuć</a>
+                                            <form action="report.php" method="POST" class="dismiss-report-form" style="display:inline;">
+                                                <?= csrfField() ?>
+                                                <input type="hidden" name="action" value="dismiss">
+                                                <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                                                <button type="submit" class="report-action-btn btn-secondary" style="border:none; cursor:pointer;">Odrzuć</button>
+                                            </form>
                                             <form action="delete_note.php" method="POST" class="delete-note-form" style="display:inline;">
                                                 <?= csrfField() ?>
                                                 <input type="hidden" name="id" value="<?= $r['note_id'] ?>">
@@ -183,8 +189,8 @@ if ($is_teacher && isset($_GET['action']) && $_GET['action'] === 'dismiss') {
     <script nonce="<?= SecurityEnterprise::getCspNonce() ?>">
         document.addEventListener('DOMContentLoaded', () => {
             // Dismiss confirm
-            document.querySelectorAll('.dismiss-report-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.dismiss-report-form').forEach(form => {
+                form.addEventListener('submit', (e) => {
                     if (!confirm('Odrzucić to zgłoszenie?')) {
                         e.preventDefault();
                     }

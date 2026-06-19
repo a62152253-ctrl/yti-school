@@ -21,9 +21,9 @@ if ($note_id > 0) {
                 unlink($fullPath);
             }
 
-            // Delete database entry
-            $stmt = $pdo->prepare("DELETE FROM notes WHERE id = ?");
-            $stmt->execute([$note_id]);
+            // Delete database entry (defensively ensuring user ownership)
+            $stmt = $pdo->prepare("DELETE FROM notes WHERE id = ? AND user_id = ?");
+            $stmt->execute([$note_id, $user_id]);
         }
     } catch (\PDOException $e) {
         // Log or handle silently

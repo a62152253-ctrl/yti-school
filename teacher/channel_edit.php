@@ -24,38 +24,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     
-    if (empty($username) || empty($email)) {
+    if (!SecurityEnterprise::verifyCsrf($_POST['csrf_token'] ?? '')) {
+        $errorMsg = "Błąd CSRF: nieprawidłowe żądanie.";
+    } elseif (empty($username) || empty($email)) {
         $errorMsg = "Nazwa oraz Email są wymagane.";
     } else {
-        try {
-            // Check if username/email already exists on another user
-            $stmtCheck = $pdo->prepare("SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?");
-            $stmtCheck->execute([$username, $email, $teacher_id]);
-            if ($stmtCheck->fetch()) {
-                $errorMsg = "Nazwa użytkownika lub Email są już zajęte.";
-            } else {
-                if (!empty($password)) {
-                    $hashed = password_hash($password, PASSWORD_DEFAULT);
-                    $stmtUpd = $pdo->prepare("UPDATE users SET username = ?, email = ?, password = ? WHERE id = ?");
-                    $stmtUpd->execute([$username, $email, $hashed, $teacher_id]);
+        $username = SecurityEnterprise::normalizeText($username);
+        $email = filter_var($email, FILTER_VALIDATE_EMAIL);
+        
+        if (!$email) {
+            $errorMsg = "Nieprawidłowy adres email.";
+        } else {
+            try {
+                // Check if username/email already exists on another user
+                $stmtCheck = $pdo->prepare("SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?");
+                $stmtCheck->execute([$username, $email, $teacher_id]);
+                if ($stmtCheck->fetch()) {
+                    $errorMsg = "Nazwa użytkownika lub Email są już zajęte.";
                 } else {
-                    $stmtUpd = $pdo->prepare("UPDATE users SET username = ?, email = ? WHERE id = ?");
-                    $stmtUpd->execute([$username, $email, $teacher_id]);
+                    if (!empty($password)) {
+                        if (strlen($password) < 8) {
+                            $errorMsg = "Nowe hasło musi mieć co najmniej 8 znaków.";
+                        } else {
+                            $hashed = password_hash($password, PASSWORD_DEFAULT);
+                            $stmtUpd = $pdo->prepare("UPDATE users SET username = ?, email = ?, password = ? WHERE id = ?");
+                            $stmtUpd->execute([$username, $email, $hashed, $teacher_id]);
+                        }
+                    } else {
+                        $stmtUpd = $pdo->prepare("UPDATE users SET username = ?, email = ? WHERE id = ?");
+                        $stmtUpd->execute([$username, $email, $teacher_id]);
+                    }
+                    
+                    if (empty($errorMsg)) {
+                        // Update session
+                        $_SESSION['username'] = $username;
+                        $_SESSION['email'] = $email;
+                        
+                        $successMsg = "Profil został pomyślnie zaktualizowany!";
+                        
+                        // Refresh data
+                        $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+                        $stmt->execute([$teacher_id]);
+                        $teacher = $stmt->fetch();
+                    }
                 }
-                
-                // Update session
-                $_SESSION['username'] = $username;
-                $_SESSION['email'] = $email;
-                
-                $successMsg = "Profil został pomyślnie zaktualizowany!";
-                
-                // Refresh data
-                $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
-                $stmt->execute([$teacher_id]);
-                $teacher = $stmt->fetch();
+            } catch (\PDOException $e) {
+                $errorMsg = "Błąd zapisu: " . $e->getMessage();
             }
-        } catch (\PDOException $e) {
-            $errorMsg = "Błąd zapisu: " . $e->getMessage();
         }
     }
 }
@@ -99,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </a>
                     </li>
                     <li class="active">
-                        <a href="channel_manage.php">
+                        <a href="channel_manager.php">
                             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                             Mój Kanał
                         </a>
@@ -145,6 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
 
                 <form action="channel_edit.php" method="POST">
+                    <?= SecurityEnterprise::csrfField() ?>
                     <div class="form-group">
                         <label for="username">Nazwa Kanału (Nazwa Użytkownika)</label>
                         <input type="text" name="username" id="username" class="form-control" value="<?= htmlspecialchars($teacher['username']) ?>" required>
@@ -162,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <div style="display: flex; gap: 12px; margin-top: 25px;">
                         <button type="submit" class="btn btn-primary" style="width: auto; padding: 12px 30px; border-radius: 20px;">Zapisz zmiany</button>
-                        <a href="channel_manage.php" class="btn btn-secondary" style="width: auto; padding: 12px 30px; border-radius: 20px; text-decoration: none;">Powrót</a>
+                        <a href="channel_manager.php" class="btn btn-secondary" style="width: auto; padding: 12px 30px; border-radius: 20px; text-decoration: none;">Powrót</a>
                     </div>
                 </form>
             </div>
