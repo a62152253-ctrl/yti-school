@@ -132,7 +132,17 @@ foreach ($gowne_suffixes as $s) {
 
 // 14. English
 $english = [
-    'fuck', 'fucking', 'f Bellend', 'fucked', 'fucker', 'fuckers', 'bitch', 'bitches', 'shit', 'shitting', 'shitted', 'shitter', 'asshole', 'assholes', 'bastard', 'bastards', 'cunt', 'cunts', 'whore', 'whores', 'motherfuck', 'motherfucker', 'motherfuckers', 'cock', 'cocks', 'dick', 'dicks', 'pussy', 'pussies', 'wank', 'wanker', 'wankers'
+    'fuck', 'fucking', 'fucked', 'fucker', 'fuckers', 'fucks', 'fuckin', 'fuckyou', 'fuckingyou', 'fucku',
+    'bitch', 'bitches', 'bitchy', 'bitched',
+    'shit', 'shitting', 'shitted', 'shitter', 'shits', 'shitty', 'bullshit',
+    'ass', 'asshole', 'assholes', 'cunt', 'cunts', 'whore', 'whores',
+    'motherfuck', 'motherfucker', 'motherfuckers', 'cock', 'cocks', 'dick', 'dicks',
+    'pussy', 'pussies', 'wank', 'wanker', 'wankers', 'bellend', 'twat', 'twats',
+    'bollocks', 'bollox', 'piss', 'pissed', 'pissing', 'crap', 'crappy', 'sex', 'seks',
+    'nigga', 'nigger', 'niggers', 'slut', 'sluts', 'bastard', 'bastards', 'dumbass',
+    'dyke', 'dykes', 'faggot', 'faggots', 'fag', 'fags', 'kike', 'kikes', 'retard', 'retards',
+    'spic', 'spics', 'prick', 'pricks', 'blowjob', 'blowjobs', 'handjob', 'handjobs',
+    'cum', 'cuming', 'cumming', 'jizz', 'semen'
 ];
 foreach ($english as $w) {
     $words[] = $w;
@@ -190,6 +200,44 @@ $code .= <<<'EOT'
         ];
         $normalized = strtr($normalized, $diacritics);
 
+        // Pre-check: Regular expression checks for common obfuscated patterns (e.g. k**wa, j***ć, p***a)
+        $regexCleaned = preg_replace('/[^\w\s\*]/u', '', $normalized) ?? $normalized;
+        $patterns = [
+            // Polish
+            '/k[\*u0v]{1,2}[\*r]?[\*w][\*a]?/ui',       // kurw, k*rw, k**wa, k**w
+            '/p[\*i1!\|e3r]{1,3}[\*d]/ui',              // pierd, p*erd, p***d
+            '/j[\*e3]{1,2}[\*b]/ui',                    // jeb, j*b, j3b
+            '/p[\*i1!\|][\*z]?[\*d]/ui',                // pizd, p*zd, pi*d, p***d
+            '/c[\*w3e]{1,2}[\*l]/ui',                   // cwel, c*el, c**l, cw3l, c3l
+            '/k[\*u0v]([\*t][\*a4\@]?|[\*a4\@])[\*s]/ui', // kutas, k*tas, ku**s, kut*s
+            '/(ch|h)[\*u0v][\*j]/ui',                   // chuj, huj, ch*j, c*uj
+            '/(?<!z)s[\*u0v][\*k]?[\*a4\@](?!ces)/ui',  // suka, s*ka
+            
+            // English
+            '/f[\*u0v]{1,2}[\*c]?[\*k]/ui',             // fuck, f*ck, f***, fvck
+            '/s[\*h][\*i1!\|][\*t7]/ui',                // shit, sh*t, sh**
+            '/b[\*i1!\|][\*t]?[\*c]?[\*h]/ui',          // bitch, b*tch, b***
+            '/a[\*s5\$]{2,}[\*h][\*o0]?[\*l]?[\*e3]?/ui', // asshole, a**hole
+            '/c[\*u0v][\*n][\*t7]/ui',                  // cunt, c*nt
+            '/d[\*i1!\|][\*c]?[\*k]/ui',                // dick, d*ck
+            '/p[\*u0v][\*s5\$]{2,}[\*y]/ui',            // pussy, p*ssy
+            '/c[\*o0][\*c]?[\*k]/ui',                   // cock, c*ck
+            '/b[\*a4\@][\*s5\$][\*t7][\*a4\@][\*r][\*d]/ui', // bastard
+            '/motherf[\*u0v]{1,2}[\*c]?[\*k]/ui',       // motherfucker
+            '/w[\*h][\*o0][\*r][\*e3]/ui',              // whore
+            '/w[\*a4\@][\*n][\*k][\*e3][\*r]/ui',       // wanker
+            '/t[\*w][\*a4\@][\*t7]/ui',                 // twat
+            '/b[\*o0][\*l]{2}[\*o0][\*c]?[\*k][\*s5\$]/ui', // bollocks
+            '/n[\*i1!\|][\*g]{2}[\*a4\@r][\*e3]?[\*r]?/ui', // nigga/nigger
+            '/\bs[\*e3]{1,2}[\*x5\$]\b/ui',             // sex, s*x
+            '/\bs[\*e3]{1,2}[\*k][\*s5\$]\b/ui',        // seks, s*ks
+        ];
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $regexCleaned)) {
+                return true;
+            }
+        }
+
         // 2. We extract words from the comment to do whole-word checks.
         // This solves the Scunthorpe problem (e.g. "szuka" contains "suka").
         // We replace any separation characters/punctuation/numbers with space, but keep letters and '*'
@@ -226,7 +274,7 @@ $code .= <<<'EOT'
 
         // 3. Fallback: also check for strong substring matches that have no common false positives
         // e.g. "kurw", "pierd", "jeb", "pizd", "cwel", "kutas", "chuj", "huj"
-        $strongStems = ['kurw', 'pierd', 'jeb', 'pizd', 'cwel', 'kutas', 'chuj', 'huj'];
+        $strongStems = ['kurw', 'pierd', 'jeb', 'pizd', 'cwel', 'kutas', 'chuj', 'huj', 'fuck', 'bitch', 'cunt', 'motherfuck', 'nigger', 'nigga'];
         $noPunctuation = str_replace(' ', '', $decodedText);
         $noPunctuationVariants = [
             $noPunctuation,
@@ -251,6 +299,28 @@ $code .= <<<'EOT'
         }
 
         return false;
+    }
+
+    /**
+     * Censures profanities by replacing characters with asterisks
+     */
+    public static function censor(string $text): string
+    {
+        if (trim($text) === '') {
+            return $text;
+        }
+
+        return preg_replace_callback('/\b\w+\b/u', function ($matches) {
+            $word = $matches[0];
+            if (self::hasProfanity($word)) {
+                $len = mb_strlen($word, 'UTF-8');
+                if ($len <= 2) {
+                    return str_repeat('*', $len);
+                }
+                return mb_substr($word, 0, 1, 'UTF-8') . str_repeat('*', $len - 1);
+            }
+            return $word;
+        }, $text);
     }
 }
 EOT;

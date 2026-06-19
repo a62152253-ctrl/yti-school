@@ -21,9 +21,11 @@ try {
     $stmt->execute([$note_id]);
     $comments = $stmt->fetchAll();
     
-    // Format dates
+    // Format dates and censor profanity
+    require_once 'includes/profanity_filter.php';
     foreach ($comments as &$c) {
         $c['created_at'] = date('d.m.Y H:i', strtotime($c['created_at']));
+        $c['content'] = ProfanityFilter::censor($c['content']);
     }
     
     echo json_encode($comments);

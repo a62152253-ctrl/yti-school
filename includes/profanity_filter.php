@@ -5,12 +5,21 @@ final class ProfanityFilter
 {
     // Complete dictionary of Polish and English profanities
     private const BAD_WORDS = [
+        'ass',
         'asshole',
         'assholes',
         'bastard',
         'bastards',
+        'bellend',
         'bitch',
+        'bitched',
         'bitches',
+        'bitchy',
+        'blowjob',
+        'blowjobs',
+        'bollocks',
+        'bollox',
+        'bullshit',
         'chuj',
         'chuja',
         'chujach',
@@ -67,6 +76,11 @@ final class ProfanityFilter
         'cipę',
         'cock',
         'cocks',
+        'crap',
+        'crappy',
+        'cum',
+        'cuming',
+        'cumming',
         'cunt',
         'cunts',
         'cwel',
@@ -276,6 +290,7 @@ final class ProfanityFilter
         'dosrunkiem',
         'dosrunku',
         'dosrunków',
+        'dumbass',
         'dupa',
         'dupce',
         'dupek',
@@ -298,12 +313,22 @@ final class ProfanityFilter
         'dupy',
         'dupą',
         'dupę',
-        'f Bellend',
+        'dyke',
+        'dykes',
+        'fag',
+        'faggot',
+        'faggots',
+        'fags',
         'fuck',
         'fucked',
         'fucker',
         'fuckers',
+        'fuckin',
         'fucking',
+        'fuckingyou',
+        'fucks',
+        'fucku',
+        'fuckyou',
         'gowna',
         'gownem',
         'gowniak',
@@ -344,6 +369,8 @@ final class ProfanityFilter
         'gównie',
         'gówno',
         'gównu',
+        'handjob',
+        'handjobs',
         'huj',
         'huja',
         'hujach',
@@ -426,6 +453,9 @@ final class ProfanityFilter
         'jebniętą',
         'jebną',
         'jebnę',
+        'jizz',
+        'kike',
+        'kikes',
         'kurwa',
         'kurwi',
         'kurwiarstwo',
@@ -738,6 +768,9 @@ final class ProfanityFilter
         'nasrunkiem',
         'nasrunku',
         'nasrunków',
+        'nigga',
+        'nigger',
+        'niggers',
         'odjebak',
         'odjebaka',
         'odjebaki',
@@ -1088,6 +1121,9 @@ final class ProfanityFilter
         'pierdolonym',
         'pierdoloną',
         'pierdolą',
+        'piss',
+        'pissed',
+        'pissing',
         'pizda',
         'pizdach',
         'pizdami',
@@ -1316,6 +1352,8 @@ final class ProfanityFilter
         'posrunkiem',
         'posrunku',
         'posrunków',
+        'prick',
+        'pricks',
         'przejebak',
         'przejebaka',
         'przejebaki',
@@ -1667,6 +1705,8 @@ final class ProfanityFilter
         'przysrunków',
         'pussies',
         'pussy',
+        'retard',
+        'retards',
         'rozjebak',
         'rozjebaka',
         'rozjebaki',
@@ -1873,10 +1913,19 @@ final class ProfanityFilter
         'ruchała',
         'ruchało',
         'ruchały',
+        'seks',
+        'semen',
+        'sex',
         'shit',
+        'shits',
         'shitted',
         'shitter',
         'shitting',
+        'shitty',
+        'slut',
+        'sluts',
+        'spic',
+        'spics',
         'spierdnie',
         'spierdniecie',
         'spierdniemy',
@@ -2011,6 +2060,8 @@ final class ProfanityFilter
         'sukao',
         'sukaą',
         'sukaę',
+        'twat',
+        'twats',
         'ujebak',
         'ujebaka',
         'ujebaki',
@@ -2886,14 +2937,34 @@ final class ProfanityFilter
         // Pre-check: Regular expression checks for common obfuscated patterns (e.g. k**wa, j***ć, p***a)
         $regexCleaned = preg_replace('/[^\w\s\*]/u', '', $normalized) ?? $normalized;
         $patterns = [
+            // Polish
             '/k[\*u0v]{1,2}[\*r]?[\*w][\*a]?/ui',       // kurw, k*rw, k**wa, k**w
-            '/p[\*i1!\|]?[\*e3]?[\*r]?[\*d]/ui',        // pierd, p*erd, p***d
+            '/p[\*i1!\|e3r]{1,3}[\*d]/ui',              // pierd, p*erd, p***d
             '/j[\*e3]{1,2}[\*b]/ui',                    // jeb, j*b, j3b
             '/p[\*i1!\|][\*z]?[\*d]/ui',                // pizd, p*zd, pi*d, p***d
-            '/c[\*w]?[\*e3]?[\*l]/ui',                  // cwel, c*el, c**l
-            '/k[\*u0v][\*t]?[\*a4\@]?[\*s]/ui',         // kutas, k*tas, ku**s
+            '/c[\*w3e]{1,2}[\*l]/ui',                   // cwel, c*el, c**l, cw3l, c3l
+            '/k[\*u0v]([\*t][\*a4\@]?|[\*a4\@])[\*s]/ui', // kutas, k*tas, ku**s, kut*s
             '/(ch|h)[\*u0v][\*j]/ui',                   // chuj, huj, ch*j, c*uj
             '/(?<!z)s[\*u0v][\*k]?[\*a4\@](?!ces)/ui',  // suka, s*ka
+            
+            // English
+            '/f[\*u0v]{1,2}[\*c]?[\*k]/ui',             // fuck, f*ck, f***, fvck
+            '/s[\*h][\*i1!\|][\*t7]/ui',                // shit, sh*t, sh**
+            '/b[\*i1!\|][\*t]?[\*c]?[\*h]/ui',          // bitch, b*tch, b***
+            '/a[\*s5\$]{2,}[\*h][\*o0]?[\*l]?[\*e3]?/ui', // asshole, a**hole
+            '/c[\*u0v][\*n][\*t7]/ui',                  // cunt, c*nt
+            '/d[\*i1!\|][\*c]?[\*k]/ui',                // dick, d*ck
+            '/p[\*u0v][\*s5\$]{2,}[\*y]/ui',            // pussy, p*ssy
+            '/c[\*o0][\*c]?[\*k]/ui',                   // cock, c*ck
+            '/b[\*a4\@][\*s5\$][\*t7][\*a4\@][\*r][\*d]/ui', // bastard
+            '/motherf[\*u0v]{1,2}[\*c]?[\*k]/ui',       // motherfucker
+            '/w[\*h][\*o0][\*r][\*e3]/ui',              // whore
+            '/w[\*a4\@][\*n][\*k][\*e3][\*r]/ui',       // wanker
+            '/t[\*w][\*a4\@][\*t7]/ui',                 // twat
+            '/b[\*o0][\*l]{2}[\*o0][\*c]?[\*k][\*s5\$]/ui', // bollocks
+            '/n[\*i1!\|][\*g]{2}[\*a4\@r][\*e3]?[\*r]?/ui', // nigga/nigger
+            '/\bs[\*e3]{1,2}[\*x5\$]\b/ui',             // sex, s*x
+            '/\bs[\*e3]{1,2}[\*k][\*s5\$]\b/ui',        // seks, s*ks
         ];
         foreach ($patterns as $pattern) {
             if (preg_match($pattern, $regexCleaned)) {
@@ -2937,7 +3008,7 @@ final class ProfanityFilter
 
         // 3. Fallback: also check for strong substring matches that have no common false positives
         // e.g. "kurw", "pierd", "jeb", "pizd", "cwel", "kutas", "chuj", "huj"
-        $strongStems = ['kurw', 'pierd', 'jeb', 'pizd', 'cwel', 'kutas', 'chuj', 'huj'];
+        $strongStems = ['kurw', 'pierd', 'jeb', 'pizd', 'cwel', 'kutas', 'chuj', 'huj', 'fuck', 'bitch', 'cunt', 'motherfuck', 'nigger', 'nigga'];
         $noPunctuation = str_replace(' ', '', $decodedText);
         $noPunctuationVariants = [
             $noPunctuation,
@@ -2962,5 +3033,27 @@ final class ProfanityFilter
         }
 
         return false;
+    }
+
+    /**
+     * Censures profanities by replacing characters with asterisks
+     */
+    public static function censor(string $text): string
+    {
+        if (trim($text) === '') {
+            return $text;
+        }
+
+        return preg_replace_callback('/\b\w+\b/u', function ($matches) {
+            $word = $matches[0];
+            if (self::hasProfanity($word)) {
+                $len = mb_strlen($word, 'UTF-8');
+                if ($len <= 2) {
+                    return str_repeat('*', $len);
+                }
+                return mb_substr($word, 0, 1, 'UTF-8') . str_repeat('*', $len - 1);
+            }
+            return $word;
+        }, $text);
     }
 }

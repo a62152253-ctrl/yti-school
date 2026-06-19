@@ -36,6 +36,27 @@ $cases = [
     // English vulgarisms
     'fuck you' => true,
     'son of a bitch' => true,
+    'sex' => true,
+    's*x' => true,
+    's@#ex' => true,
+    'seks' => true,
+    's*ks' => true,
+    'fucking u' => true,
+    'f*ck' => true,
+    'f**k' => true,
+    'a$$hole' => true,
+    'b*tch' => true,
+    'sh*t' => true,
+    'p*ssy' => true,
+    'motherf*cker' => true,
+    
+    // False positives (should be allowed)
+    'glass' => false,
+    'pass' => false,
+    'class' => false,
+    'asset' => false,
+    'assist' => false,
+    'passion' => false,
 ];
 
 $allPassed = true;
