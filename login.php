@@ -29,6 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['email']       = $user['email'];
                 $_SESSION['user_type']   = $user['type'];
                 $_SESSION['class_level'] = $user['class_level'];
+                $_SESSION['is_verified'] = (int)($user['is_verified'] ?? 0);
 
                 redirect(isTeacher() ? 'dashboard.php' : 'student_dashboard.php');
             } else {

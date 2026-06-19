@@ -70,6 +70,23 @@ try {
     if (!is_dir(UPLOAD_DIR)) {
         mkdir(UPLOAD_DIR, 0755, true);
     }
+
+    // Migration: Check and add teacher verification columns to users table
+    $columns = $pdo->query("PRAGMA table_info(users)")->fetchAll(PDO::FETCH_COLUMN, 1);
+    if (!in_array('is_verified', $columns, true)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN is_verified INTEGER DEFAULT 0");
+        // Update existing users to be verified
+        $pdo->exec("UPDATE users SET is_verified = 1");
+    }
+    if (!in_array('school_name', $columns, true)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN school_name TEXT DEFAULT NULL");
+    }
+    if (!in_array('rspo_number', $columns, true)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN rspo_number TEXT DEFAULT NULL");
+    }
+    if (!in_array('teacher_card_number', $columns, true)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN teacher_card_number TEXT DEFAULT NULL");
+    }
 } catch (PDOException $e) {
     if (APP_DEBUG) {
         die('Database connection failed: ' . $e->getMessage());

@@ -139,6 +139,45 @@ try {
 $weeklyTarget = 5;
 $weeklyProgressPercent = min(100, round(($weeklyWatchedCount / $weeklyTarget) * 100));
 $strokeDashoffset = 251 - (251 * $weeklyProgressPercent / 100);
+
+// Calculate study streak dynamically
+$studyStreak = 0;
+$watchDates = [];
+try {
+    $stmt = $pdo->prepare("SELECT DISTINCT DATE(watched_at) as watch_date FROM history WHERE user_id = ? ORDER BY watched_at DESC");
+    $stmt->execute([$user_id]);
+    $watchDates = array_column($stmt->fetchAll(), 'watch_date');
+    
+    $today = date('Y-m-d');
+    $yesterday = date('Y-m-d', strtotime('-1 day'));
+    
+    if (count($watchDates) > 0) {
+        if ($watchDates[0] === $today || $watchDates[0] === $yesterday) {
+            $studyStreak = 1;
+            $currentDate = $watchDates[0];
+            for ($i = 1; $i < count($watchDates); $i++) {
+                $expectedPrev = date('Y-m-d', strtotime($currentDate . ' -1 day'));
+                if ($watchDates[$i] === $expectedPrev) {
+                    $studyStreak++;
+                    $currentDate = $watchDates[$i];
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+} catch (\PDOException $e) {}
+if ($studyStreak === 0) {
+    $studyStreak = 1; // Default starting streak
+}
+
+// Determine achievement badges
+$badges = [
+    ['icon' => '🔥', 'title' => 'Seria Nauki', 'desc' => "$studyStreak dni", 'unlocked' => true],
+    ['icon' => '🦉', 'title' => 'Bystrzak', 'desc' => 'Ukończ 1 lekcję', 'unlocked' => (!empty($watchDates))],
+    ['icon' => '⭐', 'title' => 'Kolekcjoner', 'desc' => 'Zapisz 3 lekcje', 'unlocked' => ($savedCount >= 3)],
+    ['icon' => '🎓', 'title' => 'Wspierający', 'desc' => 'Subskrybuj nauczyciela', 'unlocked' => ($subscriptionsCount >= 1)]
+];
 ?>
 <?php
 $pageTitle = 'Główna - Yti School';
@@ -185,30 +224,48 @@ require_once 'partials/topbar.php';
                 </div>
 
                 <!-- Premium Stats and Planner Widgets -->
-                <div class="streak-badge-row" style="margin-top: 10px; margin-bottom: 24px; display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px;">
+                <div class="streak-badge-row" style="margin-top: 10px; margin-bottom: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px;">
                     <!-- Study Planner Card -->
-                    <div class="glass-card planner-widget" style="display: flex; gap: 20px; align-items: center; padding: 20px;">
-                        <div class="planner-progress-svg" style="position: relative; width: 90px; height: 90px; flex-shrink: 0;">
-                            <svg width="90" height="90" viewBox="0 0 100 100">
+                    <div class="glass-card planner-widget" style="display: flex; gap: 20px; align-items: center; padding: 20px; min-height: 140px;">
+                        <div class="planner-progress-svg" style="position: relative; width: 80px; height: 80px; flex-shrink: 0;">
+                            <svg width="80" height="80" viewBox="0 0 100 100">
                                 <circle cx="50" cy="50" r="40" class="planner-circle-bg" style="fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 8;"></circle>
                                 <circle cx="50" cy="50" r="40" class="planner-circle-fg" style="fill: none; stroke: var(--accent-color); stroke-width: 8; stroke-linecap: round; stroke-dasharray: 251; stroke-dashoffset: <?= $strokeDashoffset ?>; transform: rotate(-90deg); transform-origin: 50px 50px; transition: stroke-dashoffset 0.6s ease;"></circle>
                             </svg>
-                            <div class="planner-progress-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 800; font-size: 1rem; color: #fff;"><?= $weeklyProgressPercent ?>%</div>
+                            <div class="planner-progress-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 800; font-size: 0.95rem; color: #fff;"><?= $weeklyProgressPercent ?>%</div>
                         </div>
                         <div style="flex-grow: 1;">
-                            <h3 style="font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 4px;">Twój Cel Tygodniowy</h3>
-                            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 8px;">Ukończono <strong><?= $weeklyWatchedCount ?></strong> z <?= $weeklyTarget ?> lekcji w ciągu ostatnich 7 dni.</p>
+                            <h3 style="font-size: 1rem; font-weight: 600; color: #fff; margin-bottom: 4px;">Twój Cel Tygodniowy</h3>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 6px;">Ukończono <strong><?= $weeklyWatchedCount ?></strong> z <?= $weeklyTarget ?> lekcji w 7 dni.</p>
                             <div style="font-size: 0.72rem; color: #3ea6ff; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
                                 <?= $weeklyProgressPercent >= 100 ? '🎉 Cel osiągnięty!' : 'Trzymaj tak dalej!' ?>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Study Streak & Badges Card -->
+                    <div class="glass-card streak-badges-widget" style="padding: 20px; display: flex; flex-direction: column; min-height: 140px;">
+                        <h3 style="font-size: 1rem; font-weight: 600; color: #fff; margin-bottom: 4px;">Profil Nauki</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 12px;">Twoje odznaki i postępy:</p>
+                        
+                        <div class="badges-list" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; flex-grow: 1;">
+                            <?php foreach ($badges as $badge): ?>
+                                <div class="badge-item <?= $badge['unlocked'] ? 'unlocked' : 'locked' ?>" style="background: <?= $badge['unlocked'] ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.01)' ?>; border: 1px solid <?= $badge['unlocked'] ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)' ?>; border-radius: 6px; padding: 6px 8px; display: flex; align-items: center; gap: 6px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                    <span style="font-size: 1.2rem; filter: <?= $badge['unlocked'] ? 'none' : 'grayscale(100%) opacity(40%)' ?>;"><?= $badge['icon'] ?></span>
+                                    <div style="min-width: 0; line-height: 1.2;">
+                                        <div style="font-size: 0.72rem; font-weight: 600; color: <?= $badge['unlocked'] ? '#fff' : '#6e6e73' ?>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= $badge['title'] ?></div>
+                                        <div style="font-size: 0.64rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= $badge['desc'] ?></div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
                     <!-- Subject Statistics Card -->
-                    <div class="glass-card" style="padding: 20px; display: flex; flex-direction: column;">
+                    <div class="glass-card" style="padding: 20px; display: flex; flex-direction: column; min-height: 140px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                             <h3 style="font-size: 1rem; font-weight: 600; color: #fff;">Aktywność Przedmiotowa</h3>
-                            <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase;">Top Przedmioty</span>
+                            <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase;">Top</span>
                         </div>
                         
                         <?php if (!$hasActivity): ?>

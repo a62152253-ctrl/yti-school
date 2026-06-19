@@ -6,8 +6,21 @@ requireLogin();
 if (isStudent()) {
     redirect('student_dashboard.php');
 }
-
 $user_id = $_SESSION['user_id'];
+
+// Check teacher verification status
+try {
+    $stmt = $pdo->prepare("SELECT is_verified FROM users WHERE id = ?");
+    $stmt->execute([$user_id]);
+    $dbUser = $stmt->fetch();
+    if ($dbUser) {
+        $_SESSION['is_verified'] = (int)$dbUser['is_verified'];
+    }
+} catch (\PDOException $e) {}
+
+if (!($_SESSION['is_verified'] ?? 0)) {
+    redirect('teacher_verification.php');
+}
 
 // Handle CSV Export
 if (isset($_GET['export']) && $_GET['export'] === 'csv') {

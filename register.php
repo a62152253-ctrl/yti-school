@@ -15,6 +15,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $confirm  = $_POST['confirm_password'] ?? '';
     $type     = $_POST['type'] ?? 'student';
     $class_level = $_POST['class_level'] ?? null;
+    $school_name = trim($_POST['school_name'] ?? '');
+    $rspo_number = trim($_POST['rspo_number'] ?? '');
+    $teacher_card_number = trim($_POST['teacher_card_number'] ?? '');
     $csrfToken = $_POST['csrf_token'] ?? '';
 
     if (!SecurityEnterprise::verifyCsrf($csrfToken)) {
@@ -30,6 +33,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($type === 'teacher') {
         if (!preg_match('/\.edu\.pl$/i', $email)) {
             $error = 'Nauczyciel musi użyć szkolnego adresu e-mail kończącego się na .edu.pl.';
+        } elseif (empty($school_name) || empty($rspo_number) || empty($teacher_card_number)) {
+            $error = 'Nauczyciel musi podać nazwę szkoły, numer RSPO oraz numer legitymacji.';
+        } elseif (!preg_match('/^\d{5,10}$/', $rspo_number)) {
+            $error = 'Numer RSPO musi składać się z 5 do 10 cyfr.';
+        } elseif (!preg_match('/^[A-Z0-9\-]{5,20}$/i', $teacher_card_number)) {
+            $error = 'Numer legitymacji nauczyciela musi mieć od 5 do 20 znaków (litery, cyfry, myślniki).';
         }
         $class_level = null;
     } elseif ($type === 'student' && empty($class_level)) {
@@ -44,9 +53,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Nazwa użytkownika lub e-mail są już zajęte.';
             } else {
                 $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $pdo->prepare("INSERT INTO users (username, email, password, type, class_level) VALUES (?, ?, ?, ?, ?)");
-                if ($stmt->execute([$username, $email, $hashedPassword, $type, $class_level])) {
-                    $success = 'Konto utworzone. Możesz teraz <a href="login.php">się zalogować</a>.';
+                $is_verified = ($type === 'teacher') ? 0 : 1;
+                $stmt = $pdo->prepare("INSERT INTO users (username, email, password, type, class_level, is_verified, school_name, rspo_number, teacher_card_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                if ($stmt->execute([$username, $email, $hashedPassword, $type, $class_level, $is_verified, $school_name, $rspo_number, $teacher_card_number])) {
+                    $success = 'Konto utworzone. ' . ($type === 'teacher' ? 'Twoje konto oczekuje na weryfikację. ' : '') . 'Możesz teraz <a href="login.php">się zalogować</a>.';
                 } else {
                     $error = 'Coś poszło nie tak. Spróbuj ponownie.';
                 }
@@ -165,6 +175,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="email" name="email" id="email" class="form-control" placeholder="name@example.com" value="<?= isset($_POST['email']) ? htmlspecialchars($_POST['email']) : '' ?>" required>
                     </div>
 
+                    <div id="teacher-fields-group" style="display: none;">
+                        <div class="form-group">
+                            <label for="school_name">Nazwa szkoły</label>
+                            <input type="text" name="school_name" id="school_name" class="form-control" placeholder="np. I Liceum Ogólnokształcące w Warszawie" value="<?= isset($_POST['school_name']) ? htmlspecialchars($_POST['school_name']) : '' ?>">
+                        </div>
+                        <div class="form-group">
+                            <label for="rspo_number">Numer RSPO szkoły</label>
+                            <input type="text" name="rspo_number" id="rspo_number" class="form-control" placeholder="np. 123456" value="<?= isset($_POST['rspo_number']) ? htmlspecialchars($_POST['rspo_number']) : '' ?>">
+                        </div>
+                        <div class="form-group">
+                            <label for="teacher_card_number">Numer legitymacji nauczyciela</label>
+                            <input type="text" name="teacher_card_number" id="teacher_card_number" class="form-control" placeholder="np. PL-78492" value="<?= isset($_POST['teacher_card_number']) ? htmlspecialchars($_POST['teacher_card_number']) : '' ?>">
+                        </div>
+                    </div>
+
                     <div class="form-group" id="class-select-group">
                         <label for="class_level">Poziom edukacji / klasa</label>
                         <select name="class_level" id="class_level" class="form-control">
@@ -227,6 +252,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const classGroup = document.getElementById('class-select-group');
             const classSelect = document.getElementById('class_level');
             const emailInput = document.getElementById('email');
+            const teacherGroup = document.getElementById('teacher-fields-group');
+            const schoolName = document.getElementById('school_name');
+            const rspoNumber = document.getElementById('rspo_number');
+            const teacherCard = document.getElementById('teacher_card_number');
 
             if (role === 'teacher') {
                 classGroup.style.display = 'none';
@@ -234,11 +263,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 classGroup.style.animation = 'none';
                 classSelect.removeAttribute('required');
                 emailInput.placeholder = 'username@school.edu.pl';
+                
+                teacherGroup.style.display = 'block';
+                teacherGroup.style.animation = 'fadeInUp 0.3s ease-out';
+                schoolName.setAttribute('required', 'required');
+                rspoNumber.setAttribute('required', 'required');
+                teacherCard.setAttribute('required', 'required');
             } else {
                 classGroup.style.display = 'block';
                 classGroup.style.animation = 'fadeInUp 0.3s ease-out';
                 classSelect.setAttribute('required', 'required');
                 emailInput.placeholder = 'name@example.com';
+
+                teacherGroup.style.display = 'none';
+                teacherGroup.style.opacity = '0';
+                teacherGroup.style.animation = 'none';
+                schoolName.removeAttribute('required');
+                rspoNumber.removeAttribute('required');
+                teacherCard.removeAttribute('required');
             }
         }
 
