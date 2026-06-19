@@ -1,0 +1,41 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notes_app
+    ports:
+      - "8081:80"
+    volumes:
+      - ./uploads:/var/www/html/uploads
+      - ./data:/var/www/html/data
+    environment:
+      - APACHE_LOG_DIR=/var/log/apache2
+      - APACHE_RUN_DIR=/var/run/apache2
+      - APACHE_RUN_USER=www-data
+      - APACHE_RUN_GROUP=www-data
+      - APACHE_LOCK_DIR=/var/lock/apache2
+      - APACHE_PID_FILE=/var/run/apache2/apache2.pid
+      # Stripe API Keys
+      - STRIPE_PUBLIC_KEY=[REDACTED]v5RwCkDUqHGW88dZAypoKelfs00eGrbPSOY
+      - STRIPE_SECRET_KEY=[REDACTED]4eTr8YggNd1IeRA45srz4HCac00ceqXQ0HJ
+      - STRIPE_WEBHOOK_SECRET=whsec_test_1234567890abcdef
+      # Email SMTP Configuration
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USER=jankom@eskp.pl
+      - SMTP_PASS=your-gmail-app-password
+      - MAIL_FROM_ADDRESS=noreply@yti-school.pl
+    restart: unless-stopped
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  app_network:
+    driver: bridge

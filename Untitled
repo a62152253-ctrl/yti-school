@@ -1,0 +1,195 @@
+PROPRIETARY SOFTWARE LICENSE
+
+Copyright © 2026 Andrzej Bowsunowski
+
+Wszelkie prawa zastrzeżone.
+
+────────────────────────────────────────
+
+1. POSTANOWIENIA OGÓLNE
+   ────────────────────────────────────────
+
+Niniejszy dokument określa warunki dostępu do projektu oraz zasady korzystania
+z wszelkich materiałów wchodzących w jego skład.
+
+Projekt stanowi utwór chroniony prawem autorskim oraz innymi właściwymi
+przepisami dotyczącymi własności intelektualnej.
+
+Właścicielem wszelkich praw autorskich majątkowych oraz osobistych do projektu
+jest Andrzej Bowsunowski.
+
+────────────────────────────────────────
+2. DEFINICJE
+────────────────────────────────────────
+
+Na potrzeby niniejszego dokumentu:
+
+„Projekt” oznacza całość repozytorium oraz wszystkich jego elementów.
+
+„Kod” oznacza kod źródłowy, kod wynikowy, skrypty, konfiguracje, biblioteki,
+komponenty, moduły oraz wszelkie elementy programistyczne.
+
+„Materiały” oznaczają dokumentację, grafiki, pliki tekstowe, zasoby
+multimedialne, diagramy, schematy, projekty interfejsów oraz inne treści.
+
+„Użytkownik” oznacza każdą osobę uzyskującą dostęp do projektu.
+
+────────────────────────────────────────
+3. ZAKRES OCHRONY
+────────────────────────────────────────
+
+Ochronie podlegają między innymi:
+
+* kod źródłowy,
+* kod wykonywalny,
+* architektura aplikacji,
+* struktura projektu,
+* organizacja katalogów,
+* dokumentacja techniczna,
+* interfejs użytkownika,
+* grafiki i zasoby wizualne,
+* materiały tekstowe,
+* nazwy własne projektu,
+* oznaczenia identyfikacyjne,
+* materiały pomocnicze.
+
+Ochrona obejmuje zarówno całość projektu, jak i jego poszczególne elementy.
+
+────────────────────────────────────────
+4. BRAK LICENCJI
+────────────────────────────────────────
+
+O ile autor nie udzielił odrębnej, wyraźnej i pisemnej zgody,
+użytkownik nie otrzymuje żadnej licencji na korzystanie z projektu.
+
+Dostęp do kodu, repozytorium, archiwum lub kopii projektu nie stanowi
+udzielenia licencji.
+
+Wszelkie prawa pozostają wyłączną własnością autora.
+
+────────────────────────────────────────
+5. CZYNNOŚCI ZABRONIONE
+────────────────────────────────────────
+
+Bez uprzedniej pisemnej zgody autora zabrania się:
+
+1. kopiowania projektu w całości lub części,
+2. rozpowszechniania projektu,
+3. publikowania projektu,
+4. modyfikowania projektu,
+5. tworzenia forków,
+6. tworzenia prac pochodnych,
+7. udostępniania kodu osobom trzecim,
+8. usuwania informacji o autorze,
+9. wykorzystywania projektu komercyjnie,
+10. wykorzystywania projektu w działalności gospodarczej,
+11. wykorzystywania projektu do świadczenia usług,
+12. sprzedawania projektu,
+13. odsprzedawania dostępu do projektu,
+14. włączania kodu do innych projektów,
+15. publikowania fragmentów kodu,
+16. publikowania zmodyfikowanych wersji,
+17. publikowania tłumaczeń dokumentacji,
+18. wykorzystywania projektu w materiałach szkoleniowych,
+19. wykorzystywania projektu podczas kursów,
+20. wykorzystywania projektu podczas prezentacji publicznych.
+
+────────────────────────────────────────
+6. DOSTĘP DO KODU
+────────────────────────────────────────
+
+Dostęp do kodu jest udzielany wyłącznie w celu zapoznania się
+z projektem.
+
+Uzyskanie dostępu nie oznacza uzyskania prawa do korzystania,
+modyfikowania ani rozpowszechniania projektu.
+
+────────────────────────────────────────
+7. PRAWA AUTORSKIE
+────────────────────────────────────────
+
+Autor zachowuje wszelkie prawa autorskie osobiste i majątkowe
+do projektu.
+
+Żadne postanowienie niniejszego dokumentu nie może być interpretowane
+jako przeniesienie praw autorskich na użytkownika.
+
+────────────────────────────────────────
+8. ZGODA AUTORA
+────────────────────────────────────────
+
+Wszelkie wyjątki od niniejszych zasad wymagają uprzedniej
+pisemnej zgody autora.
+
+Zgoda może określać:
+
+* zakres wykorzystania,
+* czas obowiązywania,
+* sposób wykorzystania,
+* dodatkowe ograniczenia.
+
+Brak odpowiedzi autora nie oznacza wyrażenia zgody.
+
+────────────────────────────────────────
+9. PRAWA DO MODYFIKACJI PROJEKTU
+────────────────────────────────────────
+
+Wyłączne prawo do rozwijania, utrzymywania, publikowania
+i zarządzania projektem przysługuje autorowi.
+
+Osoby trzecie mogą wykonywać takie działania wyłącznie
+na podstawie pisemnego upoważnienia autora.
+
+────────────────────────────────────────
+10. NARUSZENIA
+────────────────────────────────────────
+
+Każde wykorzystanie projektu niezgodne z niniejszym dokumentem
+stanowi naruszenie praw autora.
+
+W przypadku stwierdzenia naruszenia autor może podjąć działania
+przewidziane przez obowiązujące przepisy prawa.
+
+────────────────────────────────────────
+11. USUNIĘCIE NARUSZAJĄCYCH KOPII
+────────────────────────────────────────
+
+Autor może żądać zaprzestania naruszeń oraz usunięcia
+nieuprawnionych kopii projektu w zakresie przewidzianym
+przez obowiązujące przepisy prawa.
+
+────────────────────────────────────────
+12. OGRANICZENIE ZRZECZENIA SIĘ PRAW
+────────────────────────────────────────
+
+Niewykonywanie przez autora określonych uprawnień nie oznacza
+zrzeczenia się tych uprawnień w przyszłości.
+
+────────────────────────────────────────
+13. ROZDZIELNOŚĆ POSTANOWIEŃ
+────────────────────────────────────────
+
+Jeżeli którekolwiek postanowienie niniejszego dokumentu okaże się
+nieważne lub niewykonalne, pozostałe postanowienia pozostają
+w pełnej mocy.
+
+────────────────────────────────────────
+14. PRAWO WŁAŚCIWE
+────────────────────────────────────────
+
+Niniejszy dokument podlega prawu obowiązującemu na terytorium
+Rzeczypospolitej Polskiej, o ile bezwzględnie obowiązujące przepisy
+nie stanowią inaczej.
+
+────────────────────────────────────────
+15. POSTANOWIENIA KOŃCOWE
+────────────────────────────────────────
+
+Projekt jest udostępniany wyłącznie na warunkach określonych
+w niniejszym dokumencie.
+
+Wszelkie prawa, które nie zostały wyraźnie przyznane użytkownikowi,
+pozostają zastrzeżone przez autora.
+
+Copyright © 2026 Andrzej Bowsunowski
+All Rights Reserved.

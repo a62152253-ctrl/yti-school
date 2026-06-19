@@ -1,0 +1,16 @@
+node_modules/
+.vs/
+.DS_Store
+.env.local
+*.log
+.idea/
+.vscode/
+*.swp
+yti.sqlite
+yti.sqlite-shm
+yti.sqlite-wal
+uploads/
+data/
+vendor/
+composer.lock
+.env

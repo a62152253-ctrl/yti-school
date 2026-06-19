@@ -1,0 +1,37 @@
+# Dependencies
+vendor/
+composer.lock
+
+# Version Control
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.vs/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+.env.local
+
+# Logs and temp
+*.log
+*.tmp
+security_audit.log
+
+# Build artifacts
+node_modules/
+dist/
+build/
+
+# Development
+.dockerignore
+Dockerfile
+docker-compose.yml
+docker-compose.yaml

@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: yti-school
+    env: php
+    buildCommand: composer install
+    startCommand: vendor/bin/heroku-php-apache2 .
+    envVars:
+      - key: APP_DEBUG
+        value: "false"
+      - key: STRIPE_PUBLIC_KEY
+        fromBuild: true
+      - key: STRIPE_SECRET_KEY
+        fromBuild: true
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        fromBuild: true
+      - key: SMTP_PASS
+        fromBuild: true
+      - key: MAIL_FROM_ADDRESS
+        value: noreply@yti-school.pl
+
+databases:
+  - name: yti-sqlite
+    plan: free
