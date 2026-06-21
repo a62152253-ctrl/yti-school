@@ -11,8 +11,7 @@ if (!defined('APP_DEBUG')) {
 
 define('APP_NAME', 'Yti School Hub');
 define('DB_FILE', APP_ROOT . '/yti.sqlite');
-define('UPLOAD_DIR', APP_ROOT . '/uploads');
-define('UPLOAD_URL_PATH', 'uploads');
+define('UPLOAD_DIR', APP_ROOT . '/storage/private/files');
 define('MAX_FILE_UPLOAD_SIZE', 50 * 1024 * 1024); // 50 MB
 
 define('ALLOWED_UPLOAD_MIME_TYPES', [

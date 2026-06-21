@@ -17,6 +17,7 @@ SecurityEnterprise::requireCsrf($_POST['csrf_token'] ?? '');
 $user_id = $_SESSION['user_id'];
 $note_id = (int)($_POST['note_id'] ?? 0);
 $content = trim($_POST['content'] ?? '');
+$parent_id = isset($_POST['parent_id']) && $_POST['parent_id'] !== '' ? (int)$_POST['parent_id'] : null;
 
 if (!$note_id || empty($content) || strlen($content) > 1000) {
     echo json_encode(['success' => false, 'message' => 'Invalid input']);
@@ -28,13 +29,22 @@ if (ProfanityFilter::hasProfanity($content)) {
     exit;
 }
 
+if ($parent_id !== null) {
+    // Verify parent comment exists and belongs to the same note
+    $check_stmt = $pdo->prepare("SELECT id FROM comments WHERE id = ? AND note_id = ?");
+    $check_stmt->execute([$parent_id, $note_id]);
+    if (!$check_stmt->fetch()) {
+        $parent_id = null;
+    }
+}
+
 try {
     // Insert comment
     $stmt = $pdo->prepare("
-        INSERT INTO comments (note_id, user_id, content) 
-        VALUES (?, ?, ?)
+        INSERT INTO comments (note_id, user_id, content, parent_id) 
+        VALUES (?, ?, ?, ?)
     ");
-    $stmt->execute([$note_id, $user_id, $content]);
+    $stmt->execute([$note_id, $user_id, $content, $parent_id]);
     
     // Notify note owner
     $stmt = $pdo->prepare("SELECT user_id FROM notes WHERE id = ?");

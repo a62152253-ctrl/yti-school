@@ -76,27 +76,11 @@ if (!$note) {
     die('Nieprawidłowy identyfikator materiału.');
 }
 ?>
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zgłoś materiał - yti School</title>
-    <link rel="stylesheet" href="<?= htmlspecialchars(assetUrl('styleapp.css')) ?>">
-</head>
-<body>
-    <!-- Topbar Header -->
-    <header class="yt-header">
-        <div class="yt-header-left">
-            <a href="student_dashboard.php" class="logo-section" style="text-decoration: none;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                    <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
-                </svg>
-                <span class="yt-logo-text">yti School</span>
-            </a>
-        </div>
-    </header>
+<?php
+$pageTitle = 'Zgłoś materiał - Yti School';
+require_once 'partials/head.php';
+require_once 'partials/topbar.php';
+?>
 
     <div class="auth-wrapper">
         <div class="auth-container" style="max-width: 500px; background: #1f1f1f; border: 1px solid var(--card-border); border-radius: 16px;">

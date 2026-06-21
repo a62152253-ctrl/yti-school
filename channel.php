@@ -3,7 +3,7 @@ require_once 'db.php';
 requireLogin();
 
 if (isTeacher()) {
-    redirect('teacher/channel_manager.php');
+    redirect('teacher_channel_manager.php');
 }
 
 $user_id = $_SESSION['user_id'];
@@ -79,20 +79,19 @@ try {
     foreach ($playlists as &$p) {
         $p['cover_url'] = '';
         if ($p['notes_count'] > 0) {
-            $stmtCover = $pdo->prepare("SELECT n.filepath, n.file_type FROM playlist_notes pn 
-                                        JOIN notes n ON pn.note_id = n.id 
-                                        WHERE pn.playlist_id = ? 
-                                        ORDER BY pn.position ASC LIMIT 1");
+            $stmtCover = $pdo->prepare("SELECT n.id, n.filepath, n.file_type FROM playlist_notes pn 
+                                         JOIN notes n ON pn.note_id = n.id 
+                                         WHERE pn.playlist_id = ? 
+                                         ORDER BY pn.position ASC LIMIT 1");
             $stmtCover->execute([$p['id']]);
             $coverNote = $stmtCover->fetch();
             if ($coverNote) {
                 if ($coverNote['file_type'] === 'presentation') {
-                    $slides = json_decode($coverNote['filepath'], true);
-                    $p['cover_url'] = !empty($slides) ? $slides[0] : '';
+                    $p['cover_url'] = 'download.php?id=' . (int)$coverNote['id'] . '&slide=0';
                 } else {
                     $ext = strtolower(pathinfo($coverNote['filepath'], PATHINFO_EXTENSION));
                     if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
-                        $p['cover_url'] = $coverNote['filepath'];
+                        $p['cover_url'] = 'download.php?id=' . (int)$coverNote['id'];
                     }
                 }
             }
@@ -101,14 +100,10 @@ try {
 } catch (\PDOException $e) {
     die("Błąd systemu: " . $e->getMessage());
 }
+?><?php
+$pageTitle = "Kanał " . $teacher['username'] . " - Yti School";
+require_once 'partials/head.php';
 ?>
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kanał <?= htmlspecialchars($teacher['username']) ?> - Yti School</title>
-    <link rel="stylesheet" href="/styleapp.css">
     <style>
         /* Channel specific styling */
         .channel-banner {
@@ -228,119 +223,14 @@ try {
             overflow: hidden;
         }
     </style>
-</head>
-<body>
-    <!-- Topbar Header like YouTube -->
-    <header class="yt-header">
-        <div class="yt-header-left">
-            <a href="student_dashboard.php" class="logo-section">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                    <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
-                </svg>
-                <span class="yt-logo-text">yti School</span>
-            </a>
-        </div>
-        <div class="yt-header-center">
-            <form action="student_dashboard.php" method="GET" class="yt-search-form">
-                <div class="yt-search-box autocomplete-container">
-                    <input type="text" name="search" id="ytSearchInput" placeholder="Szukaj lekcji, notatek, tagów..." autocomplete="off">
-                    <div class="autocomplete-suggestions" id="ytSearchSuggestions"></div>
-                </div>
-                <button type="submit" class="yt-search-btn">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                </button>
-            </form>
-        </div>
-        <div class="yt-header-right">
-            <div class="user-avatar" title="<?= htmlspecialchars($_SESSION['username']) ?>">
-                <?= strtoupper(substr(htmlspecialchars($_SESSION['username']), 0, 1)) ?>
-            </div>
-        </div>
-    </header>
-
+<?php
+require_once 'partials/topbar.php';
+?>
     <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-            <nav style="width: 100%;">
-                <ul class="nav-links">
-                    <li>
-                        <a href="student_dashboard.php">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                            Główna
-                        </a>
-                    </li>
-                    <li>
-                        <a href="notatki.php">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                            Notatki i PDF
-                        </a>
-                    </li>
-                    <li>
-                        <a href="prezentacje.php">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            Prezentacje
-                        </a>
-                    </li>
-                    <li>
-                        <a href="my_lessons.php">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
-                            Moje Lekcje
-                        </a>
-                    </li>
-                    <li>
-                        <a href="history.php">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            Historia
-                        </a>
-                    </li>
-                    <li>
-                        <a href="watch_later.php">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                            Do Obejrzenia
-                        </a>
-                    </li>
-                    <li>
-                        <a href="playlists.php">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m10 0V5a2 2 0 00-2-2H9a2 2 0 00-2 2v2m10 0H7"/></svg>
-                            Playlisty
-                        </a>
-                    </li>
-                </ul>
-
-                <?php if (!empty($sidebar_subs)): ?>
-                    <div class="sidebar-section-title" style="padding: 12px 24px 8px 24px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); font-weight: bold;">Subskrypcje</div>
-                    <ul class="nav-links">
-                        <?php foreach ($sidebar_subs as $sub): ?>
-                            <li class="<?= $sub['id'] == $teacher_id ? 'active' : '' ?>">
-                                <a href="channel.php?id=<?= $sub['id'] ?>" style="display: flex; align-items: center; gap: 12px;">
-                                    <div class="user-avatar" style="width: 24px; height: 24px; font-size: 0.75rem;">
-                                        <?= strtoupper(substr(htmlspecialchars($sub['username']), 0, 1)) ?>
-                                    </div>
-                                    <span style="font-weight: normal;"><?= htmlspecialchars($sub['username']) ?></span>
-                                </a>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
-            </nav>
-
-            <div class="sidebar-footer">
-                <div class="user-profile">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div class="user-avatar">
-                            <?= strtoupper(substr(htmlspecialchars($_SESSION['username']), 0, 1)) ?>
-                        </div>
-                        <div class="user-info">
-                            <div class="user-name"><?= htmlspecialchars($_SESSION['username']) ?></div>
-                            <span class="user-role-badge">Student &bull; Klasa <?= htmlspecialchars($student_class) ?></span>
-                        </div>
-                    </div>
-                    <a href="logout.php" class="logout-btn">Wyloguj się</a>
-                </div>
-            </div>
-        </aside>
-
+        <?php 
+        $activePage = 'channel.php';
+        require_once 'partials/sidebar.php'; 
+        ?>
         <!-- Main Workspace -->
         <main class="main-content">
             <!-- Channel Header Banner -->
@@ -383,8 +273,7 @@ try {
                 <?php else: ?>
                     <div class="note-grid">
                         <?php foreach ($lessons as $note): 
-                            $ext = strtolower(pathinfo($note['filepath'], PATHINFO_EXTENSION));
-                            $thumb = in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif']) ? $note['filepath'] : '';
+                            $thumb = (($note['file_type'] ?? '') === 'image') ? 'download.php?id=' . (int)$note['id'] : '';
                         ?>
                             <div class="note-card">
                                 <a href="watch.php?id=<?= $note['id'] ?>" class="note-thumbnail-wrapper" style="display: block; text-decoration: none;">
@@ -430,8 +319,7 @@ try {
 
                     <div class="note-grid">
                         <?php foreach ($premiumLessons as $note): 
-                            $ext = strtolower(pathinfo($note['filepath'], PATHINFO_EXTENSION));
-                            $thumb = in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif']) ? $note['filepath'] : '';
+                            $thumb = (($note['file_type'] ?? '') === 'image') ? 'download.php?id=' . (int)$note['id'] : '';
                             $price = number_format((float)($note['premium_price'] ?? 0), 2, ',', ' ');
 
                             // determine link: if premium and viewer is not owner and hasn't purchased -> goto paypal mock
@@ -487,7 +375,7 @@ try {
                     <div class="note-grid">
                         <?php foreach ($presentations as $note): 
                             $slides = json_decode($note['filepath'], true);
-                            $thumb = !empty($slides) ? $slides[0] : '';
+                            $thumb = !empty($slides) ? 'download.php?id=' . (int)$note['id'] . '&slide=0' : '';
 
                             $href = 'watch.php?id=' . $note['id'];
                             if ((($note['access_type'] ?? 'free') === 'premium') && $teacher_id != $user_id) {

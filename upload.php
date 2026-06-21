@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strcasecmp($_SERVER['HTTP_X_REQUEST
 
     $filename = sprintf('note_%s.%s', bin2hex(random_bytes(8)), $extension);
     $targetPath = SecurityEnterprise::safePathJoin(UPLOAD_DIR, $filename);
-    $dbPath = UPLOAD_URL_PATH . '/' . $filename;
+    $dbPath = 'storage/private/files/' . $filename;
 
     if (move_uploaded_file($validated['tmp_name'], $targetPath)) {
         try {
@@ -82,15 +82,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strcasecmp($_SERVER['HTTP_X_REQUEST
     exit;
 }
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dodaj Materiały - Yti School Hub</title>
-    <link rel="stylesheet" href="/styleapp.css">
-</head>
-<body>
+<?php
+$pageTitle = 'Dodaj Materiały - Yti School';
+require_once 'partials/head.php';
+require_once 'partials/topbar.php';
+?>
     <div class="app-container">
         <!-- Sidebar Navigation -->
         <?php 

@@ -68,15 +68,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tokenValid) {
     }
 }
 ?>
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Ustaw Nowe Hasło - Yti School</title>
-    <link rel="stylesheet" href="<?= htmlspecialchars(assetUrl('styleapp.css')) ?>">
-</head>
-<body class="auth-page">
+<?php
+$pageTitle = 'Ustaw Nowe Hasło - Yti School';
+require_once 'partials/head.php';
+?>
     <div class="auth-wrapper auth-shell">
         <div class="auth-layout">
             <aside class="auth-side">

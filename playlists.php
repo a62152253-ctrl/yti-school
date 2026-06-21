@@ -21,7 +21,7 @@ try {
     foreach ($playlists as &$p) {
         $p['cover_url'] = '';
         if ($p['notes_count'] > 0) {
-            $stmtCover = $pdo->prepare("SELECT n.filepath, n.file_type FROM playlist_notes pn 
+            $stmtCover = $pdo->prepare("SELECT n.id, n.filepath, n.file_type FROM playlist_notes pn 
                                         JOIN notes n ON pn.note_id = n.id 
                                         WHERE pn.playlist_id = ? 
                                         ORDER BY pn.position ASC LIMIT 1");
@@ -29,13 +29,9 @@ try {
             $coverNote = $stmtCover->fetch();
             if ($coverNote) {
                 if ($coverNote['file_type'] === 'presentation') {
-                    $slides = json_decode($coverNote['filepath'], true);
-                    $p['cover_url'] = !empty($slides) ? $slides[0] : '';
-                } else {
-                    $ext = strtolower(pathinfo($coverNote['filepath'], PATHINFO_EXTENSION));
-                    if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
-                        $p['cover_url'] = $coverNote['filepath'];
-                    }
+                    $p['cover_url'] = 'download.php?id=' . (int)$coverNote['id'] . '&slide=0';
+                } elseif ($coverNote['file_type'] === 'image') {
+                    $p['cover_url'] = 'download.php?id=' . (int)$coverNote['id'];
                 }
             }
         }
@@ -44,13 +40,11 @@ try {
     $playlists = [];
 }
 ?>
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Playlisty - Yti School</title>
-    <link rel="stylesheet" href="/styleapp.css">
+<?php
+$pageTitle = 'Playlisty - Yti School';
+$activePage = 'playlists.php';
+require_once 'partials/head.php';
+?>
     <style>
         /* Playlist Grid Layout */
         .playlist-grid {
@@ -131,35 +125,9 @@ try {
             color: var(--text-secondary);
         }
     </style>
-</head>
-<body>
-    <!-- Topbar Header like YouTube -->
-    <header class="yt-header">
-        <div class="yt-header-left">
-            <a href="student_dashboard.php" class="logo-section">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                    <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
-                </svg>
-                <span class="yt-logo-text">yti School</span>
-            </a>
-        </div>
-        <div class="yt-header-center">
-            <form action="student_dashboard.php" method="GET" class="yt-search-form">
-                <div class="yt-search-box">
-                    <input type="text" name="search" placeholder="Szukaj lekcji, notatek, tagów...">
-                </div>
-                <button type="submit" class="yt-search-btn">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                </button>
-            </form>
-        </div>
-        <div class="yt-header-right">
-            <div class="user-avatar" title="<?= htmlspecialchars($_SESSION['username']) ?>">
-                <?= strtoupper(substr(htmlspecialchars($_SESSION['username']), 0, 1)) ?>
-            </div>
-        </div>
-    </header>
+<?php
+require_once 'partials/topbar.php';
+?>
 
     <div class="app-container">
         <!-- Sidebar Navigation -->

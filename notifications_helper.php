@@ -9,9 +9,15 @@ class NotificationService {
     }
 
     /**
-     * Dodaj powiadomienie
+     * Dodaj powiadomienie do bazy danych
+     *
+     * @param int $user_id ID użytkownika
+     * @param string $title Tytuł powiadomienia
+     * @param string $message Treść wiadomości
+     * @param string|null $link Opcjonalny link
+     * @return bool Zwraca true jeśli sukces
      */
-    public function create($user_id, $title, $message, $link = null) {
+    public function create(int $user_id, string $title, string $message, ?string $link = null): bool {
         try {
             $stmt = $this->pdo->prepare("
                 INSERT INTO notifications (user_id, title, message, link) 
@@ -27,7 +33,7 @@ class NotificationService {
     /**
      * Powiadomienie o zakupie lekcji
      */
-    public function notifyPurchase($student_id, $note_id, $amount, $teacher_id) {
+    public function notifyPurchase(int $student_id, int $note_id, float $amount, int $teacher_id): bool {
         try {
             $stmt = $this->pdo->prepare("SELECT title FROM notes WHERE id = ?");
             $stmt->execute([$note_id]);
@@ -40,7 +46,7 @@ class NotificationService {
                 $student_id,
                 "Zakupiono lekcję ✓",
                 "Kupiłeś '{$note['title']}' za " . number_format($amount, 2) . " PLN",
-                "my_lessons.php"
+                "page_favorites.php"
             );
 
             // Powiadomienie dla nauczyciela
@@ -122,19 +128,26 @@ class NotificationService {
     }
 
     /**
-     * Pobierz powiadomienia użytkownika
+     * Pobierz powiadomienia użytkownika z określonym limitem
+     *
+     * @param int $user_id ID użytkownika
+     * @param int $limit Maksymalna liczba powiadomień
+     * @return array Zwraca tablicę powiadomień
      */
-    public function getNotifications($user_id, $limit = 20) {
+    public function getNotifications(int $user_id, int $limit = 20): array {
         try {
             $stmt = $this->pdo->prepare("
                 SELECT * FROM notifications 
-                WHERE user_id = ? 
+                WHERE user_id = :user_id 
                 ORDER BY created_at DESC 
-                LIMIT ?
+                LIMIT :limit
             ");
-            $stmt->execute([$user_id, $limit]);
-            return $stmt->fetchAll();
+            $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
+            error_log("Notification fetch error: " . $e->getMessage());
             return [];
         }
     }

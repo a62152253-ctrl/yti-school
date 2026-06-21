@@ -654,23 +654,23 @@ try {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `note_id=${noteId}&csrf_token=${csrfToken}`
             })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        const watchLaterBtn = document.getElementById('watchLaterBtn');
-                        const watchLaterText = document.getElementById('watchLaterText');
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const watchLaterBtn = document.getElementById('watchLaterBtn');
+                    const watchLaterText = document.getElementById('watchLaterText');
 
-                        if (data.added) {
-                            watchLaterBtn.classList.add('active');
-                            watchLaterText.textContent = 'Do Obejrzenia (Zapisano)';
-                        } else {
-                            watchLaterBtn.classList.remove('active');
-                            watchLaterText.textContent = 'Do Obejrzenia';
-                        }
+                    if (data.added) {
+                        watchLaterBtn.classList.add('active');
+                        watchLaterText.textContent = 'Do Obejrzenia (Zapisano)';
                     } else {
-                        alert(data.message || 'Wystąpił błąd.');
+                        watchLaterBtn.classList.remove('active');
+                        watchLaterText.textContent = 'Do Obejrzenia';
                     }
-                });
+                } else {
+                    alert(data.message || 'Wystąpił błąd.');
+                }
+            });
         }
 
         // Header search Autocomplete logic
@@ -726,16 +726,26 @@ try {
 
         // Comments Actions Toggle
         function activateCommentActions() {
-            document.getElementById('commentActions').classList.add('active');
+            const actions = document.getElementById('commentActions');
+            if (actions) actions.classList.add('active');
         }
 
         function cancelComment() {
-            document.getElementById('commentText').value = '';
-            document.getElementById('commentActions').classList.remove('active');
+            const commentText = document.getElementById('commentText');
+            if (commentText) commentText.value = '';
+            const actions = document.getElementById('commentActions');
+            if (actions) actions.classList.remove('active');
+            const counter = document.getElementById('commentCharCounter');
+            if (counter) {
+                counter.style.display = 'none';
+                counter.textContent = '0 / 1000';
+            }
         }
 
         function submitComment() {
-            const content = document.getElementById('commentText').value.trim();
+            const commentText = document.getElementById('commentText');
+            if (!commentText) return;
+            const content = commentText.value.trim();
             if (!content) return;
 
             fetch('submit_comment.php', {
@@ -756,52 +766,184 @@ try {
             });
         }
 
+        function createCommentNode(c, isReply) {
+            const div = document.createElement('div');
+            div.className = 'comment-node';
+            div.style.marginBottom = '14px';
+            div.style.display = 'flex';
+            div.style.gap = '12px';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'user-avatar';
+            avatar.textContent = (c.username || '?').charAt(0).toUpperCase();
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'comment-content-wrapper';
+            wrapper.style.flexGrow = '1';
+
+            const header = document.createElement('div');
+            header.className = 'comment-header-row';
+            header.style.display = 'flex';
+            header.style.alignItems = 'center';
+            header.style.gap = '8px';
+            header.style.marginBottom = '4px';
+
+            const userSpan = document.createElement('span');
+            userSpan.className = 'comment-user';
+            userSpan.style.fontWeight = '600';
+            userSpan.style.fontSize = '0.85rem';
+            userSpan.textContent = c.username || 'Anonim';
+
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'comment-time';
+            timeSpan.style.fontSize = '0.72rem';
+            timeSpan.style.color = 'var(--text-secondary)';
+            timeSpan.textContent = c.created_at || '';
+
+            header.append(userSpan, timeSpan);
+
+            const msg = document.createElement('div');
+            msg.className = 'comment-msg';
+            msg.style.fontSize = '0.9rem';
+            msg.style.lineHeight = '1.4';
+            msg.style.color = '#fff';
+            msg.textContent = c.content || '';
+
+            wrapper.append(header, msg);
+
+            // Replies to replies are also nested under the top level comment parent_id
+            const parentIdToSubmit = isReply ? c.parent_id : c.id;
+
+            const actionsRow = document.createElement('div');
+            actionsRow.style.marginTop = '6px';
+            actionsRow.style.display = 'flex';
+            actionsRow.style.gap = '12px';
+            actionsRow.style.alignItems = 'center';
+
+            const replyBtn = document.createElement('button');
+            replyBtn.textContent = 'Odpowiedz';
+            replyBtn.style.background = 'none';
+            replyBtn.style.border = 'none';
+            replyBtn.style.color = '#3ea6ff';
+            replyBtn.style.fontSize = '0.75rem';
+            replyBtn.style.cursor = 'pointer';
+            replyBtn.style.padding = '0';
+            replyBtn.style.fontWeight = '500';
+
+            actionsRow.append(replyBtn);
+            wrapper.append(actionsRow);
+
+            const replyFormContainer = document.createElement('div');
+            replyFormContainer.style.display = 'none';
+            replyFormContainer.style.marginTop = '10px';
+            replyFormContainer.style.gap = '10px';
+            replyFormContainer.style.flexDirection = 'column';
+            
+            const replyInput = document.createElement('input');
+            replyInput.type = 'text';
+            replyInput.placeholder = 'Dodaj odpowiedź...';
+            replyInput.style.width = '100%';
+            replyInput.style.background = 'transparent';
+            replyInput.style.border = 'none';
+            replyInput.style.borderBottom = '1px solid var(--card-border)';
+            replyInput.style.color = '#fff';
+            replyInput.style.fontSize = '0.85rem';
+            replyInput.style.padding = '6px 0';
+            replyInput.style.outline = 'none';
+
+            const replyActions = document.createElement('div');
+            replyActions.style.display = 'flex';
+            replyActions.style.gap = '8px';
+            replyActions.style.justifyContent = 'flex-end';
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Anuluj';
+            cancelBtn.className = 'btn btn-secondary';
+            cancelBtn.style.padding = '4px 10px';
+            cancelBtn.style.fontSize = '0.75rem';
+            cancelBtn.style.borderRadius = '12px';
+            cancelBtn.style.width = 'auto';
+
+            const submitBtn = document.createElement('button');
+            submitBtn.textContent = 'Odpowiedz';
+            submitBtn.className = 'btn btn-primary';
+            submitBtn.style.padding = '4px 10px';
+            submitBtn.style.fontSize = '0.75rem';
+            submitBtn.style.borderRadius = '12px';
+            submitBtn.style.width = 'auto';
+
+            replyActions.append(cancelBtn, submitBtn);
+            replyFormContainer.append(replyInput, replyActions);
+            wrapper.append(replyFormContainer);
+
+            replyBtn.addEventListener('click', () => {
+                replyFormContainer.style.display = replyFormContainer.style.display === 'none' ? 'flex' : 'none';
+                replyInput.focus();
+            });
+
+            cancelBtn.addEventListener('click', () => {
+                replyInput.value = '';
+                replyFormContainer.style.display = 'none';
+            });
+
+            submitBtn.addEventListener('click', () => {
+                const content = replyInput.value.trim();
+                if (!content) return;
+                fetch('submit_comment.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `note_id=${noteId}&content=${encodeURIComponent(content)}&parent_id=${parentIdToSubmit}&csrf_token=${csrfToken}`
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        loadComments();
+                    } else {
+                        alert(data.message || 'Błąd dodawania komentarza.');
+                    }
+                });
+            });
+
+            div.append(avatar, wrapper);
+            return div;
+        }
+
         function loadComments() {
             fetch('fetch_comments.php?note_id=' + noteId)
                 .then(res => res.json())
-                .then(comments => {
+                .then(data => {
                     const list = document.getElementById('commentsList');
+                    if (!list) return;
                     list.innerHTML = '';
                     
                     const title = document.getElementById('commentsCountTitle');
-                    title.textContent = `${comments.length} komentarzy`;
+                    if (title) title.textContent = `${data.total_count || 0} komentarzy`;
 
+                    const comments = data.comments || [];
                     if (comments.length === 0) {
                         list.innerHTML = '<p style="color:var(--text-secondary); font-size:0.9rem;">Brak komentarzy. Bądź pierwszy!</p>';
                         return;
                     }
 
                     comments.forEach(c => {
-                        const div = document.createElement('div');
-                        div.className = 'comment-node';
+                        const commentDiv = createCommentNode(c, false);
+                        list.appendChild(commentDiv);
 
-                        const avatar = document.createElement('div');
-                        avatar.className = 'user-avatar';
-                        avatar.textContent = (c.username || '?').charAt(0).toUpperCase();
+                        if (c.replies && c.replies.length > 0) {
+                            const repliesContainer = document.createElement('div');
+                            repliesContainer.className = 'comment-replies-container';
+                            repliesContainer.style.marginLeft = '45px';
+                            repliesContainer.style.borderLeft = '2px solid #272727';
+                            repliesContainer.style.paddingLeft = '15px';
+                            repliesContainer.style.marginTop = '10px';
+                            repliesContainer.style.marginBottom = '14px';
 
-                        const wrapper = document.createElement('div');
-                        wrapper.className = 'comment-content-wrapper';
-
-                        const header = document.createElement('div');
-                        header.className = 'comment-header-row';
-
-                        const userSpan = document.createElement('span');
-                        userSpan.className = 'comment-user';
-                        userSpan.textContent = c.username || 'Anonim';
-
-                        const timeSpan = document.createElement('span');
-                        timeSpan.className = 'comment-time';
-                        timeSpan.textContent = c.created_at || '';
-
-                        header.append(userSpan, timeSpan);
-
-                        const msg = document.createElement('div');
-                        msg.className = 'comment-msg';
-                        msg.textContent = c.content || '';
-
-                        wrapper.append(header, msg);
-                        div.append(avatar, wrapper);
-                        list.appendChild(div);
+                            c.replies.forEach(reply => {
+                                const replyDiv = createCommentNode(reply, true);
+                                repliesContainer.appendChild(replyDiv);
+                            });
+                            list.appendChild(repliesContainer);
+                        }
                     });
                 });
         }
@@ -810,25 +952,29 @@ try {
         var saveTimeout = null;
         var notepadTextEl = document.getElementById('notepadText');
         var notepadStatusEl = document.getElementById('notepadStatus');
+        var notepadAutosaveStatusEl = document.getElementById('notepadAutosaveStatus');
 
         function loadPersonalNote() {
+            if (!notepadTextEl) return;
             fetch('save_personal_note.php?note_id=' + noteId)
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
                         notepadTextEl.value = data.content;
-                        notepadStatusEl.textContent = 'Wszystko zapisane';
+                        if (notepadStatusEl) notepadStatusEl.textContent = 'Wczytano';
+                        if (notepadAutosaveStatusEl) notepadAutosaveStatusEl.textContent = 'Wszystkie zmiany zapisane';
                     } else {
-                        notepadStatusEl.textContent = 'Błąd wczytywania';
+                        if (notepadStatusEl) notepadStatusEl.textContent = 'Błąd wczytywania';
                     }
                 })
                 .catch(() => {
-                    notepadStatusEl.textContent = 'Błąd połączenia';
+                    if (notepadStatusEl) notepadStatusEl.textContent = 'Błąd połączenia';
                 });
         }
 
         function savePersonalNote() {
-            notepadStatusEl.textContent = 'Zapisywanie...';
+            if (!notepadTextEl) return;
+            if (notepadAutosaveStatusEl) notepadAutosaveStatusEl.textContent = 'Zapisywanie...';
             var noteVal = notepadTextEl.value;
 
             fetch('save_personal_note.php', {
@@ -836,22 +982,25 @@ try {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `note_id=${noteId}&content=${encodeURIComponent(noteVal)}&csrf_token=${csrfToken}`
             })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        notepadStatusEl.textContent = 'Wszystkie zmiany zapisane';
-                    } else {
-                        notepadStatusEl.textContent = 'Błąd zapisu';
-                    }
-                })
-                .catch(() => {
-                    notepadStatusEl.textContent = 'Błąd połączenia';
-                });
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    if (notepadAutosaveStatusEl) notepadAutosaveStatusEl.textContent = 'Zapisano automatycznie o ' + timeStr;
+                    if (notepadStatusEl) notepadStatusEl.textContent = 'Wszystko zapisane';
+                } else {
+                    if (notepadAutosaveStatusEl) notepadAutosaveStatusEl.textContent = 'Błąd zapisu';
+                }
+            })
+            .catch(() => {
+                if (notepadAutosaveStatusEl) notepadAutosaveStatusEl.textContent = 'Błąd połączenia';
+            });
         }
 
         if (notepadTextEl) {
             notepadTextEl.addEventListener('input', function() {
-                notepadStatusEl.textContent = 'Niezapisane zmiany...';
+                if (notepadAutosaveStatusEl) notepadAutosaveStatusEl.textContent = 'Niezapisane zmiany...';
                 clearTimeout(saveTimeout);
                 saveTimeout = setTimeout(savePersonalNote, 1200);
             });
@@ -993,10 +1142,27 @@ try {
             const descriptionBox = document.getElementById('descriptionBox');
             if (descriptionBox) descriptionBox.addEventListener('click', expandDescription);
 
-            // Comments input behavior
             const commentText = document.getElementById('commentText');
             if (commentText) {
                 commentText.addEventListener('focus', activateCommentActions);
+                
+                const commentCharCounter = document.getElementById('commentCharCounter');
+                if (commentCharCounter) {
+                    commentText.addEventListener('input', () => {
+                        const len = commentText.value.length;
+                        commentCharCounter.textContent = `${len} / 1000`;
+                        if (len > 0) {
+                            commentCharCounter.style.display = 'block';
+                        } else {
+                            commentCharCounter.style.display = 'none';
+                        }
+                        if (len > 1000) {
+                            commentCharCounter.style.color = '#ff453a';
+                        } else {
+                            commentCharCounter.style.color = 'var(--text-secondary)';
+                        }
+                    });
+                }
             }
 
             const cancelCommentBtn = document.getElementById('cancelCommentBtn');
@@ -1004,6 +1170,19 @@ try {
 
             const submitCommentBtn = document.getElementById('submitCommentBtn');
             if (submitCommentBtn) submitCommentBtn.addEventListener('click', submitComment);
+
+            // Night Vision Filter Toggle
+            const nvToggle = document.getElementById('nightVisionToggle');
+            const slideFrame = document.getElementById('slideFrame');
+            if (nvToggle && slideFrame) {
+                nvToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    slideFrame.classList.toggle('night-vision-invert');
+                    const inverted = slideFrame.classList.contains('night-vision-invert');
+                    nvToggle.style.background = inverted ? 'rgba(48, 209, 88, 0.15)' : '';
+                    nvToggle.style.color = inverted ? '#30d158' : '';
+                });
+            }
         });
     </script>
 </body>

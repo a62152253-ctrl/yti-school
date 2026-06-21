@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $filename = sprintf('slide_%s.%s', bin2hex(random_bytes(8)), $extension);
         $targetPath = SecurityEnterprise::safePathJoin(UPLOAD_DIR, $filename);
-        $dbPath = UPLOAD_URL_PATH . '/' . $filename;
+        $dbPath = 'storage/private/files/' . $filename;
 
         if (!move_uploaded_file($validated['tmp_name'], $targetPath)) {
             foreach ($uploadedPaths as $path) {

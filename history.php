@@ -42,13 +42,11 @@ try {
     $historyItems = [];
 }
 ?>
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historia - Yti School</title>
-    <link rel="stylesheet" href="/styleapp.css">
+<?php
+$pageTitle = 'Historia - Yti School';
+$activePage = 'history.php';
+require_once 'partials/head.php';
+?>
     <style>
         .history-list {
             display: flex;
@@ -66,9 +64,12 @@ try {
             background: #1f1f1f;
             border-radius: 12px;
             border: 1px solid var(--card-border);
+            transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
         }
         .history-item-card:hover {
             background: #272727;
+            transform: translateX(4px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
         .history-thumb-container {
             width: 168px;
@@ -137,83 +138,13 @@ try {
             background: var(--danger-color);
         }
     </style>
-</head>
-<body>
-    <!-- Topbar Header like YouTube -->
-    <header class="yt-header">
-        <div class="yt-header-left">
-            <a href="student_dashboard.php" class="logo-section">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                    <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
-                </svg>
-                <span class="yt-logo-text">yti School</span>
-            </a>
-        </div>
-        <div class="yt-header-center">
-            <form action="student_dashboard.php" method="GET" class="yt-search-form">
-                <div class="yt-search-box">
-                    <input type="text" name="search" placeholder="Szukaj lekcji, notatek, tagów...">
-                </div>
-                <button type="submit" class="yt-search-btn">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                </button>
-            </form>
-        </div>
-        <div class="yt-header-right">
-            <div class="user-avatar" title="<?= htmlspecialchars($_SESSION['username']) ?>">
-                <?= strtoupper(substr(htmlspecialchars($_SESSION['username']), 0, 1)) ?>
-            </div>
-        </div>
-    </header>
+<?php
+require_once 'partials/topbar.php';
+?>
 
     <div class="app-container">
         <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-            <nav style="width: 100%;">
-                <ul class="nav-links">
-                    <li>
-                        <a href="student_dashboard.php">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                            Główna
-                        </a>
-                    </li>
-                    <li>
-                        <a href="my_lessons.php">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
-                            Moje Lekcje
-                        </a>
-                    </li>
-                    <li class="active">
-                        <a href="history.php">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            Historia
-                        </a>
-                    </li>
-                    <li>
-                        <a href="playlists.php">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m10 0V5a2 2 0 00-2-2H9a2 2 0 00-2 2v2m10 0H7"/></svg>
-                            Playlisty
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-
-            <div class="sidebar-footer">
-                <div class="user-profile">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div class="user-avatar">
-                            <?= strtoupper(substr(htmlspecialchars($_SESSION['username']), 0, 1)) ?>
-                        </div>
-                        <div class="user-info">
-                            <div class="user-name"><?= htmlspecialchars($_SESSION['username']) ?></div>
-                            <span class="user-role-badge">Student &bull; Klasa <?= htmlspecialchars($student_class) ?></span>
-                        </div>
-                    </div>
-                    <a href="logout.php" class="logout-btn">Wyloguj się</a>
-                </div>
-            </div>
-        </aside>
+        <?php require_once 'partials/sidebar.php'; ?>
 
         <!-- Main Workspace -->
         <main class="main-content">
@@ -228,28 +159,47 @@ try {
             </header>
 
             <?php if (empty($historyItems)): ?>
-                <div class="glass-card" style="padding: 60px; text-align: center; color: var(--text-secondary);">
-                    <svg width="60" height="60" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom: 20px; color: var(--accent-color);">
+                <div class="empty-state-card">
+                    <svg width="60" height="60" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                         <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
-                    <h3 style="color:#fff;">Twoja historia jest pusta</h3>
-                    <p style="margin-top: 10px;">Otwieraj materiały ze strony głównej, aby pojawiały się na tej liście.</p>
+                    <h3>Twoja historia jest pusta</h3>
+                    <p>Otwieraj materiały ze strony głównej, aby pojawiały się na tej liście.</p>
                 </div>
             <?php else: ?>
                 <div class="history-list">
-                    <?php foreach ($historyItems as $item): 
+                    <?php 
+                    $lastDateLabel = '';
+                    foreach ($historyItems as $item): 
+                        // Timeline date separator
+                        $watchedDate = date('Y-m-d', strtotime($item['watched_at']));
+                        $today = date('Y-m-d');
+                        $yesterday = date('Y-m-d', strtotime('-1 day'));
+                        if ($watchedDate === $today) { $dateLabel = 'Dzisiaj'; }
+                        elseif ($watchedDate === $yesterday) { $dateLabel = 'Wczoraj'; }
+                        else { $dateLabel = date('d.m.Y', strtotime($item['watched_at'])); }
+                        
+                        if ($dateLabel !== $lastDateLabel):
+                            $lastDateLabel = $dateLabel;
+                    ?>
+                        <div class="timeline-date-separator"><?= $dateLabel ?></div>
+                    <?php endif;
                         $isPres = $item['file_type'] === 'presentation';
                         $thumbnailUrl = '';
                         if ($isPres) {
                             $slides = json_decode($item['filepath'], true);
-                            $thumbnailUrl = !empty($slides) ? $slides[0] : '';
+                            $thumbnailUrl = !empty($slides) ? 'download.php?id=' . (int)$item['id'] . '&slide=0' : '';
                         } else {
-                            $fileExtension = strtolower(pathinfo($item['filepath'], PATHINFO_EXTENSION));
-                            $isImage = in_array($fileExtension, ['jpg', 'jpeg', 'png', 'webp', 'gif']);
-                            if ($isImage) {
-                                $thumbnailUrl = $item['filepath'];
+                            if (($item['file_type'] ?? '') === 'image') {
+                                $thumbnailUrl = 'download.php?id=' . (int)$item['id'];
                             }
                         }
+                        // Relative time
+                        $watchedTimestamp = strtotime($item['watched_at']);
+                        $diff = time() - $watchedTimestamp;
+                        if ($diff < 3600) { $relTime = max(1, floor($diff / 60)) . ' min temu'; }
+                        elseif ($diff < 86400) { $relTime = floor($diff / 3600) . ' godz. temu'; }
+                        else { $relTime = floor($diff / 86400) . ' dni temu'; }
                     ?>
                         <div class="history-item-card" data-href="watch.php?id=<?= $item['id'] ?>">
                             <div class="history-thumb-container">
@@ -271,7 +221,7 @@ try {
                                 <h3 class="history-item-title"><?= htmlspecialchars($item['title']) ?></h3>
                                 <p class="history-item-desc"><?= htmlspecialchars($item['description'] ?? 'Brak opisu.') ?></p>
                                 <div class="history-item-meta">
-                                    Nauczyciel: <strong><?= htmlspecialchars($item['username']) ?></strong> &bull; Wyświetlenia: <?= (int)$item['views'] ?> &bull; Otwarto: <?= date('Y-m-d H:i', strtotime($item['watched_at'])) ?>
+                                    <?= htmlspecialchars($item['username']) ?> &bull; <?= (int)$item['views'] ?> wyświetleń &bull; <span style="color: var(--accent-color);"><?= $relTime ?></span>
                                 </div>
                             </div>
 
@@ -320,5 +270,4 @@ try {
             });
         });
     </script>
-</body>
-</html>
+<?php require_once 'partials/footer.php'; ?>

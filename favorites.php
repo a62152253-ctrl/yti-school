@@ -58,15 +58,10 @@ require APP_ROOT . '/partials/sidebar.php';
             <div class="note-grid">
                 <?php foreach ($favorites as $note):
                     $thumbnailUrl = '';
-                    $fileExtension = strtolower(pathinfo($note['filepath'] ?? '', PATHINFO_EXTENSION));
-                    $isImage = in_array($fileExtension, ['jpg', 'jpeg', 'png', 'webp', 'gif']);
-                    if ($isImage) {
-                        $thumbnailUrl = $note['filepath'] ?? '';
-                    } else if (($note['file_type'] ?? '') === 'presentation') {
-                        $slides = json_decode($note['filepath'] ?? '', true);
-                        if (is_array($slides) && !empty($slides)) {
-                            $thumbnailUrl = $slides[0];
-                        }
+                    if (($note['file_type'] ?? '') === 'presentation') {
+                        $thumbnailUrl = 'download.php?id=' . (int)$note['id'] . '&slide=0';
+                    } elseif (($note['file_type'] ?? '') === 'image') {
+                        $thumbnailUrl = 'download.php?id=' . (int)$note['id'];
                     }
                 ?>
                     <div class="note-card">

@@ -2,18 +2,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
     const showToast = (message) => {
-        let toast = document.querySelector('.toast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.className = 'toast';
-            document.body.appendChild(toast);
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
         }
-        toast.textContent = message;
-        toast.classList.add('is-visible');
-        window.clearTimeout(showToast.timeout);
-        showToast.timeout = window.setTimeout(() => {
-            toast.classList.remove('is-visible');
-        }, 2400);
+        const toast = document.createElement('div');
+        toast.className = 'toast-notice toast-success';
+        toast.innerHTML = `<span style="font-size: 1.1rem;">⭐️</span> <span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 50);
+        
+        if (window.playSystemSound) window.playSystemSound('success');
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     };
 
     const createSuggestion = (item) => {
@@ -95,41 +101,4 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         });
     });
-
-    const searchInput = document.getElementById('ytSearchInput');
-    const suggestionsBox = document.getElementById('ytSearchSuggestions');
-
-    if (searchInput && suggestionsBox) {
-        searchInput.addEventListener('input', () => {
-            const query = searchInput.value.trim();
-            if (query.length < 1) {
-                suggestionsBox.innerHTML = '';
-                suggestionsBox.style.display = 'none';
-                return;
-            }
-
-            fetch('search_suggestions.php?q=' + encodeURIComponent(query))
-                .then(res => res.json())
-                .then(data => {
-                    suggestionsBox.innerHTML = '';
-                    if (!Array.isArray(data) || data.length === 0) {
-                        suggestionsBox.style.display = 'none';
-                        return;
-                    }
-
-                    data.forEach(item => suggestionsBox.appendChild(createSuggestion(item)));
-                    suggestionsBox.style.display = 'block';
-                })
-                .catch(() => {
-                    suggestionsBox.innerHTML = '';
-                    suggestionsBox.style.display = 'none';
-                });
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
-                suggestionsBox.style.display = 'none';
-            }
-        });
-    }
 });

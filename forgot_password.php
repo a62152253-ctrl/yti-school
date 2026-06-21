@@ -54,15 +54,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Reset hasła - Yti School</title>
-    <link rel="stylesheet" href="<?= htmlspecialchars(assetUrl('styleapp.css')) ?>">
-</head>
-<body class="auth-page">
+<?php
+$pageTitle = 'Reset hasła - Yti School';
+require_once 'partials/head.php';
+?>
     <div class="auth-wrapper auth-shell">
         <div class="auth-layout">
             <aside class="auth-side">
@@ -102,30 +97,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </aside>
 
             <div class="auth-container auth-card">
-                <div class="auth-header">
-                    <h1>Reset hasła</h1>
-                    <p>Wpisz adres e-mail, a wyślemy instrukcję resetowania.</p>
-                </div>
+                <?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($messageType === 'success' || $messageType === 'info')): ?>
+                    <div class="success-illustration-wrapper" style="text-align: center; padding: 30px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        <div class="success-ring-outer" style="margin-bottom: 24px; display: inline-flex; align-items: center; justify-content: center; width: 90px; height: 90px; border-radius: 50%; background: rgba(48, 209, 88, 0.1); border: 2px dashed rgba(48, 209, 88, 0.3); animation: rotateDashed 20s linear infinite;">
+                            <div class="success-ring-inner" style="display: inline-flex; align-items: center; justify-content: center; width: 70px; height: 70px; border-radius: 50%; background: rgba(48, 209, 88, 0.15); border: 2px solid rgba(48, 209, 88, 0.4); box-shadow: 0 0 20px rgba(48, 209, 88, 0.3);">
+                                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#30d158" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="checkmark-svg" style="animation: checkPop 0.5s ease-out forwards;">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 style="font-weight: 800; font-size: 1.6rem; margin-bottom: 12px; color: var(--text-primary); letter-spacing: -0.02em;">Sprawdź skrzynkę!</h2>
+                        <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 28px; font-size: 0.95rem; text-align: center; max-width: 320px;">
+                            <?= $message ?>
+                        </p>
+                        <a href="login.php" class="btn btn-primary" style="display: inline-block; width: 100%; text-align: center;">Wróć do logowania</a>
+                    </div>
+                <?php else: ?>
+                    <div class="auth-header">
+                        <h1>Reset hasła</h1>
+                        <p>Wpisz adres e-mail, a wyślemy instrukcję resetowania.</p>
+                    </div>
 
-                <?php if (!empty($message)): ?>
-                    <div class="alert alert-<?= htmlspecialchars($messageType) ?>">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                        <?= $message ?>
+                    <?php if (!empty($message)): ?>
+                        <div class="alert alert-<?= htmlspecialchars($messageType) ?>">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                            <?= $message ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <form method="POST">
+                        <?= SecurityEnterprise::csrfField() ?>
+                        <div class="form-group">
+                            <label for="email">Adres e-mail</label>
+                            <input type="email" name="email" id="email" class="form-control" placeholder="name@example.com" value="<?= isset($_POST['email']) ? htmlspecialchars($_POST['email']) : '' ?>" required autofocus>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Wyślij link resetowania</button>
+                    </form>
+
+                    <div class="auth-footer">
+                        Pamiętasz hasło? <a href="login.php">Zaloguj się</a>
                     </div>
                 <?php endif; ?>
-
-                <form method="POST">
-                    <?= SecurityEnterprise::csrfField() ?>
-                    <div class="form-group">
-                        <label for="email">Adres e-mail</label>
-                        <input type="email" name="email" id="email" class="form-control" placeholder="name@example.com" value="<?= isset($_POST['email']) ? htmlspecialchars($_POST['email']) : '' ?>" required autofocus>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Wyślij link resetowania</button>
-                </form>
-
-                <div class="auth-footer">
-                    Pamiętasz hasło? <a href="login.php">Zaloguj się</a>
-                </div>
             </div>
         </div>
     </div>

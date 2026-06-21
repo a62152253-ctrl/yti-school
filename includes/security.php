@@ -997,12 +997,36 @@ if (!function_exists('isStudent')) {
     }
 }
 
+if (!function_exists('isStudentCreator')) {
+    function isStudentCreator(): bool
+    {
+        return isset($_SESSION['is_student_creator']) && (int)$_SESSION['is_student_creator'] === 1;
+    }
+}
+
+if (!function_exists('isAdmin')) {
+    function isAdmin(): bool
+    {
+        return isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
+    }
+}
+
 if (!function_exists('requireTeacher')) {
     function requireTeacher(): void
     {
         requireLogin();
         if (!isTeacher()) {
             redirect('student_dashboard.php');
+        }
+    }
+}
+
+if (!function_exists('requireAdmin')) {
+    function requireAdmin(): void
+    {
+        requireLogin();
+        if (!isAdmin()) {
+            redirect('login.php');
         }
     }
 }

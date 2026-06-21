@@ -18,7 +18,7 @@ try {
     }
 } catch (\PDOException $e) {}
 
-if (!($_SESSION['is_verified'] ?? 0)) {
+if (($_SESSION['is_verified'] ?? 0) !== 1) {
     redirect('teacher_verification.php');
 }
 
@@ -230,30 +230,10 @@ require_once 'partials/head.php';
 require_once 'partials/topbar.php';
 ?>
     <style>
-        :root {
-            --bg-color: #080808;
-            --card-bg: #121212;
-            --card-border: rgba(255, 255, 255, 0.08);
-            --primary-color: #ffffff;
-            --accent-color: #ffffff;
-            --text-primary: #ffffff;
-            --text-secondary: #8e8e93;
-            --yt-input-bg: #1c1c1e;
-        }
-
-        body {
-            background-color: #080808 !important;
-            color: #ffffff !important;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-            -webkit-font-smoothing: antialiased;
-        }
-
         .main-content {
             padding: 32px !important;
             max-width: none;
-            margin-left: var(--sidebar-width) !important;
             margin-top: 56px !important;
-            width: calc(100% - var(--sidebar-width)) !important;
         }
 
         .dashboard-hero {
@@ -905,12 +885,6 @@ require_once 'partials/topbar.php';
         }
 
         @media (max-width: 1024px) {
-            .main-content {
-                margin-left: 0 !important;
-                width: 100% !important;
-                padding: 20px !important;
-            }
-
             .saas-dashboard-grid {
                 grid-template-columns: 1fr !important;
             }
@@ -1071,7 +1045,7 @@ require_once 'partials/topbar.php';
             <!-- Apple Style Hero Section -->
             <section class="dashboard-hero">
                 <div>
-                    <h1>Witaj w Panelu, Nauczycielu</h1>
+                    <h1 id="teacherGreeting">Witaj w Panelu, Nauczycielu</h1>
                     <div class="teacher-status-grid" aria-label="Szybkie statystyki">
                         <div class="teacher-status-pill">
                             <strong><?= (int)$notesCount ?></strong>
@@ -1086,7 +1060,7 @@ require_once 'partials/topbar.php';
                             <span>Playlisty</span>
                         </div>
                     </div>
-                    <p>Zarządzaj swoimi materiałami, analizuj postępy uczniów i publikuj nowoczesne lekcje w jednym, przepięknym miejscu.</p>
+                    <p id="teacherGreetingQuote">Zarządzaj swoimi materiałami, analizuj postępy uczniów i publikuj nowoczesne lekcje w jednym, przepięknym miejscu.</p>
                 </div>
                 
                 <div class="dashboard-actions">
@@ -1611,5 +1585,33 @@ require_once 'partials/topbar.php';
     <script src="upload.js"></script>
     <script src="dashboard.js"></script>
     <script src="app.js"></script>
+    <script nonce="<?= SecurityEnterprise::getCspNonce() ?>">
+    document.addEventListener('DOMContentLoaded', () => {
+        const greetingEl = document.getElementById('teacherGreeting');
+        const quoteEl = document.getElementById('teacherGreetingQuote');
+        if (greetingEl && quoteEl) {
+            const hr = new Date().getHours();
+            const username = <?= json_encode($_SESSION['username'] ?? 'Nauczycielu') ?>;
+            let greeting = 'Witaj w Panelu, ' + username + '! 👋';
+            let quote = 'Zarządzaj swoimi materiałami, analizuj postępy uczniów i publikuj nowoczesne lekcje.';
+            
+            if (hr >= 5 && hr < 12) {
+                greeting = 'Dzień dobry, ' + username + '! 🌅';
+                quote = 'Udanego poranka! Przygotuj inspirujące materiały dla swoich uczniów na dzisiejsze lekcje.';
+            } else if (hr >= 12 && hr < 18) {
+                greeting = 'Dzień dobry, ' + username + '! ☀️';
+                quote = 'Popołudnie to świetny czas na analizę statystyk wyświetleń i zaangażowania uczniów.';
+            } else if (hr >= 18 && hr < 22) {
+                greeting = 'Dobry wieczór, ' + username + '! 🌌';
+                quote = 'Planujesz jutrzejsze zajęcia? Wieczorne publikacje będą od rana dostępne dla Twoich klas.';
+            } else {
+                greeting = 'Witaj nocny marku, ' + username + '! 🦉';
+                quote = 'Pracujesz nad nową prezentacją w nocy? Pamiętaj o zasłużonym odpoczynku!';
+            }
+            greetingEl.textContent = greeting;
+            quoteEl.textContent = quote;
+        }
+    });
+    </script>
 </body>
 </html>

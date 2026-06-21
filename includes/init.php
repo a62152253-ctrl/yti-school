@@ -71,6 +71,19 @@ try {
         mkdir(UPLOAD_DIR, 0755, true);
     }
 
+    // Migration: Create school_codes table and seed it
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `school_codes` (
+        `code` TEXT PRIMARY KEY,
+        `school_name` TEXT NOT NULL
+    );");
+    $codeCheck = $pdo->query("SELECT COUNT(*) FROM school_codes")->fetchColumn();
+    if ($codeCheck == 0) {
+        $stmtSeed = $pdo->prepare("INSERT INTO school_codes (code, school_name) VALUES (?, ?)");
+        $stmtSeed->execute(['SCHOOL123', 'I Liceum Ogólnokształcące w Warszawie']);
+        $stmtSeed->execute(['TEACH2026', 'Szkoła Podstawowa nr 5 w Krakowie']);
+        $stmtSeed->execute(['YTI999', 'Technikum Informatyczne w Poznaniu']);
+    }
+
     // Migration: Check and add teacher verification columns to users table
     $columns = $pdo->query("PRAGMA table_info(users)")->fetchAll(PDO::FETCH_COLUMN, 1);
     if (!in_array('is_verified', $columns, true)) {
@@ -86,6 +99,38 @@ try {
     }
     if (!in_array('teacher_card_number', $columns, true)) {
         $pdo->exec("ALTER TABLE users ADD COLUMN teacher_card_number TEXT DEFAULT NULL");
+    }
+    if (!in_array('is_student_creator', $columns, true)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN is_student_creator INTEGER DEFAULT 0");
+    }
+    if (!in_array('verification_document', $columns, true)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN verification_document TEXT DEFAULT NULL");
+    }
+
+    // Migration: Check and update purchases table schema to support premium features (id, stripe_id, payment_status)
+    $purchaseCols = $pdo->query("PRAGMA table_info(purchases)")->fetchAll(PDO::FETCH_COLUMN, 1);
+    if (!in_array('payment_status', $purchaseCols, true)) {
+        $pdo->exec("ALTER TABLE purchases RENAME TO purchases_old");
+        
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `purchases` (
+          `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+          `user_id` INTEGER NOT NULL,
+          `note_id` INTEGER NOT NULL,
+          `amount` REAL NOT NULL,
+          `stripe_id` TEXT UNIQUE DEFAULT NULL,
+          `payment_status` TEXT DEFAULT 'pending' CHECK(payment_status IN ('pending', 'completed', 'failed')),
+          `paid_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(user_id, note_id),
+          FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+          FOREIGN KEY (`note_id`) REFERENCES `notes`(`id`) ON DELETE CASCADE
+        );");
+        
+        // Copy old data if any existed
+        $pdo->exec("INSERT INTO purchases (user_id, note_id, amount, paid_at, payment_status) 
+                    SELECT user_id, note_id, amount, paid_at, 'completed' FROM purchases_old");
+        
+        $pdo->exec("DROP TABLE purchases_old");
     }
 } catch (PDOException $e) {
     if (APP_DEBUG) {

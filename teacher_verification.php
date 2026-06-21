@@ -18,7 +18,7 @@ try {
         redirect('logout.php');
     }
     
-    if ($user['is_verified']) {
+    if ($user['is_verified'] == 1) {
         $_SESSION['is_verified'] = 1;
         redirect('dashboard.php');
     }
@@ -36,27 +36,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($action === 'verify_code') {
         $code = trim($_POST['verification_code'] ?? '');
-        if ($code === 'VERIFY99') {
-            try {
-                $stmt = $pdo->prepare("UPDATE users SET is_verified = 1 WHERE id = ?");
-                $stmt->execute([$user_id]);
+        try {
+            $stmtCode = $pdo->prepare("SELECT school_name FROM school_codes WHERE code = ?");
+            $stmtCode->execute([$code]);
+            $school = $stmtCode->fetch();
+            
+            if ($school) {
+                $stmt = $pdo->prepare("UPDATE users SET is_verified = 1, school_name = ? WHERE id = ?");
+                $stmt->execute([$school['school_name'], $user_id]);
                 $_SESSION['is_verified'] = 1;
                 redirect('dashboard.php?msg=verified');
-            } catch (\PDOException $e) {
-                $error = 'Wystąpił błąd podczas zapisywania weryfikacji.';
+            } else {
+                $error = 'Nieprawidłowy kod weryfikacyjny dla Twojej placówki oświatowej.';
             }
-        } else {
-            $error = 'Nieprawidłowy kod weryfikacyjny dla Twojej placówki oświatowej.';
+        } catch (\PDOException $e) {
+            $error = 'Wystąpił błąd podczas zapisywania weryfikacji.';
         }
     } elseif ($action === 'upload_id') {
-        // Simulate file upload weryfikacja
-        try {
-            $stmt = $pdo->prepare("UPDATE users SET is_verified = 1 WHERE id = ?");
-            $stmt->execute([$user_id]);
-            $_SESSION['is_verified'] = 1;
-            redirect('dashboard.php?msg=verified');
-        } catch (\PDOException $e) {
-            $error = 'Wystąpił błąd podczas zatwierdzania dokumentu.';
+        if (!isset($_FILES['id_document']) || $_FILES['id_document']['error'] === UPLOAD_ERR_NO_FILE) {
+            $error = 'Wybierz plik dokumentu do przesłania.';
+        } else {
+            $file = $_FILES['id_document'];
+            [$validUpload, $uploadMeta] = SecurityEnterprise::validateUpload($file, ALLOWED_UPLOAD_MIME_TYPES, MAX_FILE_UPLOAD_SIZE);
+            if ($validUpload !== true) {
+                $error = is_string($uploadMeta) ? $uploadMeta : 'Nieprawidłowy plik dokumentu.';
+            } else {
+                /** @var array{name:string,mime:string,size:int,tmp_name:string} $validated */
+                $validated = $uploadMeta;
+                $extension = SecurityEnterprise::safeFileExtension($validated['name']);
+                if ($extension === '') {
+                    $error = 'Nieobsługiwany format pliku.';
+                } else {
+                    $filename = sprintf('id_%s.%s', bin2hex(random_bytes(8)), $extension);
+                    $targetPath = SecurityEnterprise::safePathJoin(UPLOAD_DIR, $filename);
+                    $dbPath = 'storage/private/files/' . $filename;
+                    
+                    if (move_uploaded_file($validated['tmp_name'], $targetPath)) {
+                        try {
+                            $stmt = $pdo->prepare("UPDATE users SET is_verified = 2, verification_document = ? WHERE id = ?");
+                            $stmt->execute([$dbPath, $user_id]);
+                            $_SESSION['is_verified'] = 2;
+                            // Refresh page to show pending status
+                            redirect('teacher_verification.php?msg=pending');
+                        } catch (\PDOException $e) {
+                            @unlink($targetPath);
+                            $error = 'Błąd bazy danych podczas zapisywania dokumentu.';
+                        }
+                    } else {
+                        $error = 'Błąd zapisu pliku dokumentu na serwerze.';
+                    }
+                }
+            }
         }
     }
 }
@@ -230,36 +260,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
-            <form action="teacher_verification.php" method="POST" style="margin-bottom: 0;">
-                <?= SecurityEnterprise::csrfField() ?>
-                <input type="hidden" name="action" value="verify_code">
-                
-                <div class="form-group">
-                    <label for="verification_code">Kod aktywacyjny placówki</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" name="verification_code" id="verification_code" class="form-control" placeholder="Wpisz kod aktywacyjny szkoly..." required style="margin-bottom: 0;">
-                        <button type="submit" class="btn btn-primary" style="margin-bottom: 0; white-space: nowrap;">Weryfikuj kod</button>
+            <?php if ($user['is_verified'] == 2): ?>
+                <div class="alert alert-warning" style="margin-bottom: 20px; background: rgba(255, 159, 10, 0.16); color: #ff9f0a; border: 1px solid rgba(255, 159, 10, 0.2); padding: 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.2rem;">⏳</span>
+                    <span>Twój dokument został przesłany i oczekuje na weryfikację przez administratora.</span>
+                </div>
+            <?php else: ?>
+                <form action="teacher_verification.php" method="POST" style="margin-bottom: 0;">
+                    <?= SecurityEnterprise::csrfField() ?>
+                    <input type="hidden" name="action" value="verify_code">
+                    
+                    <div class="form-group">
+                        <label for="verification_code">Kod aktywacyjny placówki</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" name="verification_code" id="verification_code" class="form-control" placeholder="Wpisz kod aktywacyjny szkoły..." required style="margin-bottom: 0;">
+                            <button type="submit" class="btn btn-primary" style="margin-bottom: 0; white-space: nowrap;">Weryfikuj kod</button>
+                        </div>
+                        <small style="color: var(--text-secondary); margin-top: 6px; display: block;">Dla celów testowych/prezentacyjnych wpisz kod: <strong style="color: #30d158; cursor: pointer;" onclick="document.getElementById('verification_code').value='SCHOOL123'">SCHOOL123</strong></small>
                     </div>
-                    <small style="color: var(--text-secondary); margin-top: 6px; display: block;">Dla celów testowych/prezentacyjnych wpisz kod: <strong style="color: #30d158; cursor: pointer;" onclick="document.getElementById('verification_code').value='VERIFY99'">VERIFY99</strong></small>
+                </form>
+
+                <div class="section-divider">
+                    <span class="section-divider-text">lub</span>
                 </div>
-            </form>
 
-            <div class="section-divider">
-                <span class="section-divider-text">lub</span>
-            </div>
+                <form action="teacher_verification.php" method="POST" id="uploadForm" enctype="multipart/form-data">
+                    <?= SecurityEnterprise::csrfField() ?>
+                    <input type="hidden" name="action" value="upload_id">
+                    <input type="file" id="id_document" name="id_document" accept="image/*,application/pdf" style="display: none;" onchange="handleFileSelected()">
 
-            <form action="teacher_verification.php" method="POST" id="uploadForm" enctype="multipart/form-data">
-                <?= SecurityEnterprise::csrfField() ?>
-                <input type="hidden" name="action" value="upload_id">
-                <input type="file" id="id_document" name="id_document" accept="image/*,application/pdf" style="display: none;" onchange="handleFileSelected()">
-
-                <div class="upload-area" id="dropArea" onclick="document.getElementById('id_document').click()">
-                    <div class="loader-spinner" id="uploadSpinner"></div>
-                    <span class="upload-icon" id="uploadIcon">📄</span>
-                    <p id="uploadText" style="margin-bottom: 4px; font-weight: 600; color: #fff;">Prześlij zdjęcie legitymacji nauczycielskiej</p>
-                    <small style="color: var(--text-secondary);">Akceptowane pliki: PNG, JPG, PDF (maks. 5MB)</small>
-                </div>
-            </form>
+                    <div class="upload-area" id="dropArea" onclick="document.getElementById('id_document').click()">
+                        <div class="loader-spinner" id="uploadSpinner"></div>
+                        <span class="upload-icon" id="uploadIcon">📄</span>
+                        <p id="uploadText" style="margin-bottom: 4px; font-weight: 600; color: #fff;">Prześlij zdjęcie legitymacji nauczycielskiej</p>
+                        <small style="color: var(--text-secondary);">Akceptowane pliki: PNG, JPG, PDF (maks. 5MB)</small>
+                    </div>
+                </form>
+            <?php endif; ?>
             
             <div style="text-align: center; margin-top: 30px;">
                 <a href="logout.php" style="color: var(--text-secondary); font-size: 0.9rem; text-decoration: none; hover:underline;">Wyloguj się</a>

@@ -60,13 +60,11 @@ if ($is_teacher && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action
     redirect('report.php');
 }
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zgłoszenia - Yti School Hub</title>
-    <link rel="stylesheet" href="/styleapp.css">
+<?php
+$pageTitle = 'Zgłoszenia - Yti School';
+require_once 'partials/head.php';
+require_once 'partials/topbar.php';
+?>
     <style>
         .report-table {
             width: 100%;
@@ -96,8 +94,6 @@ if ($is_teacher && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action
             font-weight: 600;
         }
     </style>
-</head>
-<body>
     <div class="app-container">
         <!-- Sidebar Navigation -->
         <?php 

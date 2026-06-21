@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_purchase'])) 
                 $user_id,
                 'Zakupiono lekcję ✓',
                 "Kupiłeś '" . htmlspecialchars($note['title']) . "' za " . number_format($amount, 2) . " PLN",
-                'my_lessons.php'
+                'page_favorites.php'
             ]);
             
             // Create notification for teacher

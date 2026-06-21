@@ -39,26 +39,20 @@ try {
     if (!empty($notes)) {
         $firstNote = $notes[0];
         if ($firstNote['file_type'] === 'presentation') {
-            $slides = json_decode($firstNote['filepath'], true);
-            $cover_url = !empty($slides) ? $slides[0] : '';
-        } else {
-            $ext = strtolower(pathinfo($firstNote['filepath'], PATHINFO_EXTENSION));
-            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
-                $cover_url = $firstNote['filepath'];
-            }
+            $cover_url = 'download.php?id=' . (int)$firstNote['id'] . '&slide=0';
+        } elseif ($firstNote['file_type'] === 'image') {
+            $cover_url = 'download.php?id=' . (int)$firstNote['id'];
         }
     }
 } catch (\PDOException $e) {
     die("Błąd systemu: " . $e->getMessage());
 }
 ?>
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($playlist['title']) ?> - Yti School</title>
-    <link rel="stylesheet" href="/styleapp.css">
+<?php
+$pageTitle = $playlist['title'] . ' - Yti School';
+$activePage = 'playlists.php';
+require_once 'partials/head.php';
+?>
     <style>
         .playlist-layout {
             display: grid;
@@ -178,35 +172,9 @@ try {
             color: var(--text-secondary);
         }
     </style>
-</head>
-<body>
-    <!-- Topbar Header like YouTube -->
-    <header class="yt-header">
-        <div class="yt-header-left">
-            <a href="student_dashboard.php" class="logo-section">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                    <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
-                </svg>
-                <span class="yt-logo-text">yti School</span>
-            </a>
-        </div>
-        <div class="yt-header-center">
-            <form action="student_dashboard.php" method="GET" class="yt-search-form">
-                <div class="yt-search-box">
-                    <input type="text" name="search" placeholder="Szukaj lekcji, notatek, tagów...">
-                </div>
-                <button type="submit" class="yt-search-btn">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                </button>
-            </form>
-        </div>
-        <div class="yt-header-right">
-            <div class="user-avatar" title="<?= htmlspecialchars($_SESSION['username']) ?>">
-                <?= strtoupper(substr(htmlspecialchars($_SESSION['username']), 0, 1)) ?>
-            </div>
-        </div>
-    </header>
+<?php
+require_once 'partials/topbar.php';
+?>
 
     <div class="app-container">
         <!-- Sidebar Navigation -->
@@ -255,42 +223,146 @@ try {
                             $isItemPres = $n['file_type'] === 'presentation';
                             $itemThumb = '';
                             if ($isItemPres) {
-                                $slides = json_decode($n['filepath'], true);
-                                $itemThumb = !empty($slides) ? $slides[0] : '';
-                            } else {
-                                $ext = strtolower(pathinfo($n['filepath'], PATHINFO_EXTENSION));
-                                if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
-                                    $itemThumb = $n['filepath'];
-                                }
+                                $itemThumb = 'download.php?id=' . (int)$n['id'] . '&slide=0';
+                            } elseif ($n['file_type'] === 'image') {
+                                $itemThumb = 'download.php?id=' . (int)$n['id'];
                             }
-                    ?>
-                        <a href="watch.php?id=<?= $n['id'] ?>&playlist_id=<?= $playlist['id'] ?>" class="playlist-item-row">
+                            ?>
+                            <div class="playlist-item-row" draggable="<?= ($playlist['user_id'] == $user_id) ? 'true' : 'false' ?>" data-note-id="<?= $n['id'] ?>" style="cursor: <?= ($playlist['user_id'] == $user_id) ? 'grab' : 'default' ?>; display: flex; align-items: center; gap: 16px; padding: 8px 12px; border-radius: 12px; transition: background-color 0.15s ease;">
+                            <?php if ($playlist['user_id'] == $user_id): ?>
+                                <div class="drag-handle" style="color: var(--text-secondary); cursor: grab; display: flex; align-items: center;">
+                                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M20 9H4v2h16V9zM4 15h16v-2H4v2z"/></svg>
+                                </div>
+                            <?php endif; ?>
                             <span class="playlist-item-index"><?= $idx++ ?></span>
                             
-                            <div class="playlist-item-thumb">
-                                <?php if (!empty($itemThumb)): ?>
-                                    <img src="<?= htmlspecialchars($itemThumb) ?>" alt="<?= htmlspecialchars($n['title']) ?>">
-                                <?php else: ?>
-                                    <div class="playlist-item-thumb-preview">
-                                        <?php if ($n['file_type'] === 'presentation'): ?>
-                                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                        <?php else: ?>
-                                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endif; ?>
-                                <span class="note-badge"><?= htmlspecialchars($n['subject']) ?></span>
-                            </div>
+                            <a href="watch.php?id=<?= $n['id'] ?>&playlist_id=<?= $playlist['id'] ?>" style="display: flex; align-items: center; gap: 16px; text-decoration: none; color: inherit; flex-grow: 1; overflow: hidden;">
+                                <div class="playlist-item-thumb">
+                                    <?php if (!empty($itemThumb)): ?>
+                                        <img src="<?= htmlspecialchars($itemThumb) ?>" alt="<?= htmlspecialchars($n['title']) ?>">
+                                    <?php else: ?>
+                                        <div class="playlist-item-thumb-preview">
+                                            <?php if ($n['file_type'] === 'presentation'): ?>
+                                                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                            <?php else: ?>
+                                                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <span class="note-badge"><?= htmlspecialchars($n['subject']) ?></span>
+                                </div>
 
-                            <div class="playlist-item-details">
-                                <div class="playlist-item-title"><?= htmlspecialchars($n['title']) ?></div>
-                                <div class="playlist-item-meta"><?= htmlspecialchars($n['username']) ?> &bull; <?= (int)$n['views'] ?> wyświetleń</div>
-                            </div>
-                        </a>
+                                <div class="playlist-item-details">
+                                    <div class="playlist-item-title"><?= htmlspecialchars($n['title']) ?></div>
+                                    <div class="playlist-item-meta"><?= htmlspecialchars($n['username']) ?> &bull; <?= (int)$n['views'] ?> wyświetleń</div>
+                                </div>
+                            </a>
+                        </div>
                     <?php endforeach; endif; ?>
                 </div>
             </div>
         </main>
     </div>
+
+    <script nonce="<?= SecurityEnterprise::getCspNonce() ?>">
+        document.addEventListener('DOMContentLoaded', () => {
+            const list = document.querySelector('.playlist-items-list');
+            if (!list) return;
+
+            let draggedItem = null;
+
+            list.querySelectorAll('.playlist-item-row').forEach(row => {
+                if (row.getAttribute('draggable') !== 'true') return;
+
+                row.addEventListener('dragstart', (e) => {
+                    draggedItem = row;
+                    row.style.opacity = '0.5';
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                row.addEventListener('dragend', () => {
+                    draggedItem = null;
+                    row.style.opacity = '1';
+                    list.querySelectorAll('.playlist-item-row').forEach(r => {
+                        r.style.borderTop = 'none';
+                        r.style.borderBottom = 'none';
+                    });
+                });
+
+                row.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    
+                    const bounding = row.getBoundingClientRect();
+                    const offset = bounding.y + bounding.height / 2;
+                    if (e.clientY - offset > 0) {
+                        row.style.borderBottom = '2px solid #3ea6ff';
+                        row.style.borderTop = 'none';
+                    } else {
+                        row.style.borderTop = '2px solid #3ea6ff';
+                        row.style.borderBottom = 'none';
+                    }
+                });
+
+                row.addEventListener('dragleave', () => {
+                    row.style.borderTop = 'none';
+                    row.style.borderBottom = 'none';
+                });
+
+                row.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (!draggedItem || draggedItem === row) return;
+
+                    const bounding = row.getBoundingClientRect();
+                    const offset = bounding.y + bounding.height / 2;
+                    
+                    if (e.clientY - offset > 0) {
+                        row.after(draggedItem);
+                    } else {
+                        row.before(draggedItem);
+                    }
+
+                    // Reset borders
+                    row.style.borderTop = 'none';
+                    row.style.borderBottom = 'none';
+
+                    // Update index numbers visually
+                    let idx = 1;
+                    list.querySelectorAll('.playlist-item-index').forEach(span => {
+                        span.textContent = idx++;
+                    });
+
+                    // Save new order via fetch AJAX
+                    updatePlaylistOrder();
+                });
+            });
+
+            function updatePlaylistOrder() {
+                const noteIds = [];
+                list.querySelectorAll('.playlist-item-row').forEach(row => {
+                    noteIds.push(row.getAttribute('data-note-id'));
+                });
+
+                const formData = new FormData();
+                formData.append('playlist_id', <?= $playlist_id ?>);
+                formData.append('note_ids', JSON.stringify(noteIds));
+                formData.append('csrf_token', '<?= SecurityEnterprise::csrfToken() ?>');
+
+                fetch('update_playlist_order.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert(data.message || 'Wystąpił błąd podczas zapisywania kolejności.');
+                    }
+                })
+                .catch(() => {
+                    alert('Błąd połączenia z serwerem.');
+                });
+            }
+        });
+    </script>
 </body>
 </html>

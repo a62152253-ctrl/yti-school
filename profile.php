@@ -7,7 +7,7 @@ $error = '';
 $successMsg = '';
 
 try {
-    $stmt = $pdo->prepare('SELECT username, email, type, class_level FROM users WHERE id = ?');
+    $stmt = $pdo->prepare('SELECT username, email, type, class_level, is_student_creator FROM users WHERE id = ?');
     $stmt->execute([$user_id]);
     $user = $stmt->fetch();
     if (!$user) {
@@ -81,50 +81,88 @@ try {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     SecurityEnterprise::requireCsrf();
-    $newUsername = trim($_POST['username'] ?? '');
-    $newEmail = trim($_POST['email'] ?? '');
-    $newPassword = $_POST['password'] ?? '';
-    $confirmPassword = $_POST['confirm_password'] ?? '';
-
-    if (empty($newUsername) || empty($newEmail)) {
-        $error = 'Nazwa użytkownika i email są wymagane.';
-    } elseif (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
-        $error = 'Podaj poprawny adres email.';
-    } elseif (!empty($newPassword) && strlen($newPassword) < 6) {
-        $error = 'Hasło musi mieć przynajmniej 6 znaków.';
-    } elseif ($newPassword !== $confirmPassword) {
-        $error = 'Hasła nie są takie same.';
-    }
-
-    if (empty($error)) {
+    
+    if (isset($_POST['become_creator'])) {
         try {
-            $stmt = $pdo->prepare('SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?');
-            $stmt->execute([$newUsername, $newEmail, $user_id]);
-            if ($stmt->fetch()) {
-                $error = 'Nazwa użytkownika lub email są już zajęte.';
-            } else {
-                $updates = ['username' => $newUsername, 'email' => $newEmail];
-                if (!empty($newPassword)) {
-                    $updates['password'] = password_hash($newPassword, PASSWORD_DEFAULT);
-                }
-                $fields = [];
-                $values = [];
-                foreach ($updates as $field => $value) {
-                    $fields[] = "$field = ?";
-                    $values[] = $value;
-                }
-                $values[] = $user_id;
-                $stmt = $pdo->prepare('UPDATE users SET ' . implode(', ', $fields) . ' WHERE id = ?');
-                $stmt->execute($values);
-
-                $_SESSION['username'] = $newUsername;
-                $_SESSION['email'] = $newEmail;
-                $successMsg = 'Dane profilu zostały zaktualizowane.';
-                $user['username'] = $newUsername;
-                $user['email'] = $newEmail;
-            }
+            $stmt = $pdo->prepare('UPDATE users SET is_student_creator = 1 WHERE id = ?');
+            $stmt->execute([$user_id]);
+            $_SESSION['is_student_creator'] = 1;
+            $successMsg = 'Pomyślnie aktywowano Panel Twórcy! Od teraz możesz dodawać własne lekcje.';
+            $user['is_student_creator'] = 1;
         } catch (\PDOException $e) {
             $error = 'Błąd zapisu: ' . $e->getMessage();
+        }
+    } else {
+        $newUsername = trim($_POST['username'] ?? '');
+        $newEmail = trim($_POST['email'] ?? '');
+        $newPassword = $_POST['password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+        $newClassLevel = isset($_POST['class_level']) ? trim($_POST['class_level']) : null;
+        $newType = trim($_POST['type'] ?? '');
+
+        if (empty($newUsername) || empty($newEmail)) {
+            $error = 'Nazwa użytkownika i email są wymagane.';
+        } elseif (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+            $error = 'Podaj poprawny adres email.';
+        } elseif (!in_array($newType, ['student', 'teacher'], true)) {
+            $error = 'Nieprawidłowa rola użytkownika.';
+        } elseif (!empty($newPassword) && strlen($newPassword) < 6) {
+            $error = 'Hasło musi mieć przynajmniej 6 znaków.';
+        } elseif ($newPassword !== $confirmPassword) {
+            $error = 'Hasła nie są takie same.';
+        }
+
+        if (empty($error)) {
+            try {
+                $stmt = $pdo->prepare('SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?');
+                $stmt->execute([$newUsername, $newEmail, $user_id]);
+                if ($stmt->fetch()) {
+                    $error = 'Nazwa użytkownika lub email są już zajęte.';
+                } else {
+                    $updates = [
+                        'username' => $newUsername, 
+                        'email' => $newEmail,
+                        'type' => $newType
+                    ];
+                    if (!empty($newPassword)) {
+                        $updates['password'] = password_hash($newPassword, PASSWORD_DEFAULT);
+                    }
+                    if ($newType === 'student') {
+                        $updates['class_level'] = $newClassLevel;
+                    } else {
+                        $updates['class_level'] = null;
+                    }
+                    $fields = [];
+                    $values = [];
+                    foreach ($updates as $field => $value) {
+                        $fields[] = "$field = ?";
+                        $values[] = $value;
+                    }
+                    $values[] = $user_id;
+                    $stmt = $pdo->prepare('UPDATE users SET ' . implode(', ', $fields) . ' WHERE id = ?');
+                    $stmt->execute($values);
+
+                    $_SESSION['username'] = $newUsername;
+                    $_SESSION['email'] = $newEmail;
+                    $_SESSION['user_type'] = $newType;
+                    if ($newType === 'student') {
+                        $_SESSION['class_level'] = $newClassLevel;
+                    } else {
+                        unset($_SESSION['class_level']);
+                    }
+                    $successMsg = 'Dane profilu zostały zaktualizowane.';
+                    $user['username'] = $newUsername;
+                    $user['email'] = $newEmail;
+                    $user['type'] = $newType;
+                    if ($newType === 'student') {
+                        $user['class_level'] = $newClassLevel;
+                    } else {
+                        $user['class_level'] = null;
+                    }
+                }
+            } catch (\PDOException $e) {
+                $error = 'Błąd zapisu: ' . $e->getMessage();
+            }
         }
     }
 }
@@ -137,8 +175,20 @@ require APP_ROOT . '/partials/topbar.php';
 require APP_ROOT . '/partials/sidebar.php';
 ?>
 <main class="main-content">
-    <div class="glass-card profile-card" style="max-width: 760px; margin: 24px auto; padding: 28px;">
-        <h2>Ustawienia konta</h2>
+    <div style="max-width: 760px; margin: 24px auto;">
+        <!-- Profile Hero -->
+        <div class="profile-hero">
+            <div class="profile-hero-avatar">
+                <?= strtoupper(substr(htmlspecialchars($user['username']), 0, 1)) ?>
+            </div>
+            <div class="profile-hero-info">
+                <h2><?= htmlspecialchars($user['username']) ?></h2>
+                <p><?= htmlspecialchars($user['email']) ?> • <?= $user['type'] === 'teacher' ? 'Nauczyciel' : 'Student' ?></p>
+            </div>
+        </div>
+
+    <div class="glass-card profile-card" style="padding: 28px;">
+        <h2 style="font-size: 1.2rem;">Ustawienia konta</h2>
         <p style="color: var(--text-secondary); margin-top: 4px;">Zaktualizuj dane użytkownika oraz hasło.</p>
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger" style="margin-top: 18px;"><?= htmlspecialchars($error) ?></div>
@@ -195,15 +245,34 @@ require APP_ROOT . '/partials/sidebar.php';
                 <input type="email" id="email" name="email" class="form-control" value="<?= htmlspecialchars($user['email']) ?>" required>
             </div>
             <div class="form-group">
-                <label>Rola</label>
-                <input type="text" class="form-control" value="<?= htmlspecialchars($user['type'] === 'teacher' ? 'Nauczyciel' : 'Student') ?>" disabled>
+                <label for="type">Rola</label>
+                <select id="type" name="type" class="form-control" style="background: var(--card-bg); color: #fff; border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 14px;">
+                    <option value="student" <?= $user['type'] === 'student' ? 'selected' : '' ?>>Student</option>
+                    <option value="teacher" <?= $user['type'] === 'teacher' ? 'selected' : '' ?>>Nauczyciel</option>
+                </select>
             </div>
-            <?php if ($user['type'] === 'student'): ?>
+            
+            <div id="studentOnlyFields" style="display: <?= $user['type'] === 'student' ? 'block' : 'none' ?>;">
                 <div class="form-group">
-                    <label>Klasa</label>
-                    <input type="text" class="form-control" value="<?= htmlspecialchars($user['class_level'] ?? '') ?>" disabled>
+                    <label for="class_level">Klasa</label>
+                    <input type="text" id="class_level" name="class_level" class="form-control" value="<?= htmlspecialchars($user['class_level'] ?? '') ?>">
                 </div>
-            <?php endif; ?>
+                <div class="form-group">
+                    <label>Status Twórcy</label>
+                    <?php if ((int)($user['is_student_creator'] ?? 0) === 1): ?>
+                        <div style="color: #30d158; font-weight: 600; font-size: 0.9rem; margin-top: 6px; display: flex; align-items: center; gap: 6px;">
+                            <span>✓ Aktywny</span>
+                            <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-secondary);">(Możesz dodawać i zarządzać własnymi notatkami)</span>
+                        </div>
+                    <?php else: ?>
+                        <div style="margin-top: 8px; background: rgba(10, 132, 255, 0.06); padding: 14px; border-radius: 8px; border: 1px dashed rgba(10, 132, 255, 0.2); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);">Chcesz dzielić się notatkami z innymi? Aktywuj Panel Twórcy.</span>
+                            <button type="submit" name="become_creator" class="btn btn-secondary" style="width: auto; margin-bottom: 0; padding: 6px 12px; font-size: 0.78rem; border-color: rgba(10, 132, 255, 0.3); color: #0a84ff; background: rgba(10, 132, 255, 0.1);">Aktywuj Panel</button>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <div class="form-divider"></div>
             <div class="form-group">
                 <label for="password">Nowe hasło</label>
                 <input type="password" id="password" name="password" class="form-control" placeholder="Pozostaw puste aby nie zmieniać">
@@ -215,5 +284,17 @@ require APP_ROOT . '/partials/sidebar.php';
             <button type="submit" class="btn btn-primary">Zapisz zmiany</button>
         </form>
     </div>
+    </div>
+    <script nonce="<?= SecurityEnterprise::getCspNonce() ?>">
+    document.addEventListener('DOMContentLoaded', function() {
+        const typeSelect = document.getElementById('type');
+        const studentOnly = document.getElementById('studentOnlyFields');
+        if (typeSelect && studentOnly) {
+            typeSelect.addEventListener('change', function() {
+                studentOnly.style.display = this.value === 'student' ? 'block' : 'none';
+            });
+        }
+    });
+    </script>
 </main>
 <?php require APP_ROOT . '/partials/footer.php'; ?>
